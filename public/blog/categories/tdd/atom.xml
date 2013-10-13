@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Troika Tech]]></title>
-  <link href="http://troikatech.com/atom.xml" rel="self"/>
+  <title><![CDATA[Category: tdd | Troika Tech]]></title>
+  <link href="http://troikatech.com/blog/categories/tdd/atom.xml" rel="self"/>
   <link href="http://troikatech.com/"/>
   <updated>2013-10-12T23:08:40-03:00</updated>
   <id>http://troikatech.com/</id>
@@ -45,34 +45,6 @@
 <h3>Final thoughts</h3>
 
 <p>It&rsquo;s hard to not cry foul when people don&rsquo;t do what they say they&rsquo;re going to. The situation that triggered this logorrhea, now that it&rsquo;s through, must be assessed not as some act of malice, but simply as the disconnect between discourse and what is perceived to be a pressing matter. And to be fair, this particular instance had a happy ending: after my frustrated emails, the dude went back and made things right with the code and the build is bright green. Hopefully it will be ok to talk about it openly as both the wrong and the right thing to do, and prove compelling enough for the junior devs and other coworkers to feel engaged.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Momentum, this ineffable thing]]></title>
-    <link href="http://troikatech.com/blog/2013/09/05/momentum-this-ineffable-thing/"/>
-    <updated>2013-09-05T23:41:00-03:00</updated>
-    <id>http://troikatech.com/blog/2013/09/05/momentum-this-ineffable-thing</id>
-    <content type="html"><![CDATA[<p>Revisiting the book, it has surprised me to find a lot of the ideas familiar, some of them even mundane. Since trying it the last (three years ago? four?), I have delved a bit into functional programming via Scala (I did <a href="https://www.coursera.org/course/progfun">Martin Odersky&rsquo;s &ldquo;Functional Programming Principles in Scala&rdquo;</a> last semester) and Clojure, and the things I learned in <a href="http://mitpress.mit.edu/books/little-schemer">The Little Schemer</a> weren&rsquo;t all forgotten. The substitution model, for one, feels very natural, and recursion is not that difficult to reason about.</p>
-
-<p>What I&rsquo;m doing differently this time is following along with the <a href="http://groups.csail.mit.edu/mac/classes/6.001/abelson-sussman-lectures/">1986 lectures</a>, which at least one person in every SICP-related Reddit/HN thread has recommended (and I ignored). I usually prefer learning from books and documentation, but the lectures have the benefit of requiring focus and monotasking. Also, listening to the audience&rsquo;s questions makes me a bit more aware of what is hard for a person with the Math background but not the programming skills &mdash; the exact opposite of my situation, and a great aid in keeping things in perspective.</p>
-
-<p>As predicted, said Math-heaviness still makes me a little bit uncomfortable, but I&rsquo;m soldiering through. That means stopping at an exercise, reading Wikipedia and sometimes just taking things at face-value, as I don&rsquo;t have the intuitions someone more familiar with the subject matter would. It takes some patience, sometimes, and I would be lying if I told you it doesn&rsquo;t discourage me a bit.</p>
-
-<p>That said, Chapter 1 is done. Now on to Chapter 2. Wish me luck.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Getting things done... eventually.]]></title>
-    <link href="http://troikatech.com/blog/2013/08/14/getting-things-done-dot-dot-dot-eventually-dot/"/>
-    <updated>2013-08-14T21:02:00-03:00</updated>
-    <id>http://troikatech.com/blog/2013/08/14/getting-things-done-dot-dot-dot-eventually-dot</id>
-    <content type="html"><![CDATA[<p>As I review my to-do list, there it is: &ldquo;Read SICP and do its exercises&rdquo;. That note has been there for six years, moving from productivity tool to productivity tool, never getting done. It&rsquo;s been a <em>Project</em>, a <em>Someday</em>, in <em>Inbox</em> and even in <em>Trash</em>, in fits of rage. Sometimes I think I change my to-do software just to find one that magically will make it actionable.</p>
-
-<p>The truth is the book scares me. Reading it puts me face-to-face with my incipient Math skills, and the thought of overcoming them brings about the fear of not going through any transformations, to still be beneath the nice and impressive people I follow on Twitter and star on GitHub. Looming doom is baked into my personality, and maturity hasn&rsquo;t made me get <em>Goals</em> or appreciate what I&rsquo;ve accomplished.</p>
-
-<p>I&rsquo;m turning 30 in less than two months, and the failure is following me into a new decade. As weak as symbolic dates and its resolutions are as motivators, I really want to tick that box in the not-so-distant future. This blog will be a tale of a confused man walking through the land of Scheme, occasionally going off-topic, but always using the book as its main thread. I hope it&rsquo;s not too boring.</p>
 ]]></content>
   </entry>
   

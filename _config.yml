@@ -4,10 +4,10 @@
 
 url: http://troikatech.com
 title: Troika Tech
-subtitle: Tales of a puny mind going through the land of SICP
+subtitle: Tales of a puny mind going through the land of software
 author: Vitor Capela
 simple_search: http://google.com/search
-description: Tales of a puny mind going through the land of SICP
+description: Tales of a puny mind going through the land of software
 
 # Default date format is "ordinal" (resulting in "July 22nd 2007")
 # You can customize the format as defined in
