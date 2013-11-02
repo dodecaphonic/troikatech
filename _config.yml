@@ -4,7 +4,7 @@
 
 url: http://troikatech.com
 title: Troika Tech
-subtitle: Tales of a puny mind going through the land of software
+subtitle: 
 author: Vitor Capela
 simple_search: http://google.com/search
 description: Tales of a puny mind going through the land of software
@@ -78,7 +78,7 @@ google_plus_one_size: medium
 
 # Google Plus Profile
 # Hidden: No visible button, just add author information to search results
-googleplus_user: dodecaphonic
+googleplus_user: +VitorCapela
 googleplus_hidden: false
 
 # Pinboard
