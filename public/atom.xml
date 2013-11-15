@@ -4,7 +4,7 @@
   <title><![CDATA[Troika Tech]]></title>
   <link href="http://troikatech.com/atom.xml" rel="self"/>
   <link href="http://troikatech.com/"/>
-  <updated>2013-11-01T23:45:05-02:00</updated>
+  <updated>2013-11-15T12:01:50-02:00</updated>
   <id>http://troikatech.com/</id>
   <author>
     <name><![CDATA[Vitor Capela]]></name>
@@ -12,6 +12,23 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA["REWORK", by 37signals &mdash; &#9733;&#9733;&#9734;&#9734;&#9734;]]></title>
+    <link href="http://troikatech.com/blog/2013/11/15/rework/"/>
+    <updated>2013-11-15T11:52:00-02:00</updated>
+    <id>http://troikatech.com/blog/2013/11/15/rework</id>
+    <content type="html"><![CDATA[<p><a href="http://37signals.com/remote/">
+<img class="left" src="http://37signals.com/images/remote/remote_front.png" width="400" height="600" title="'REMOTE - by Jason Fried and DHH'" >
+</a></p>
+
+<p>As a remote worker myself, I nodded my head frequently at the advantages and challenges presented, so the rating&rsquo;s not about a fundamental disagreement with the message or the intentions. Like the authors, I know from personal experience that commuting, facing a strict set of working hours, interruptions and living with the expectation of availability from others are some of the greatest dangers to productive work (creative work especially).</p>
+
+<p>I did, however, expect more than short chapters and sparse data points. Maybe it&rsquo;s the programmer in me misunderstanding the whole &ldquo;business book&rdquo; thing, but perhaps the arguments would hold more weight if they were more than anedoctal. They render the whole thing as an account of what works for 37signals — a very small and relatively unknown company in the greater scheme of things. I understand that relying on managers and employers to be swayed by arguments from authority is antithetical to the book (the thesis being that remote work is a <em>rationally</em> better decision overall), but we cannot underestimate how many small-to-medium companies manage by emulation. Maybe stronger data and clearer research could counter gut reactions better.</p>
+
+<p>I think this might be good if you need just a little push to go after this, if you&rsquo;re a bit on the fence and already considering/thinking this is a trend that should be studied and followed. If you want something to challenge your views with great insights, don&rsquo;t bother: it&rsquo;s fluffy and humane and beautifully illustrated, but you&rsquo;re probably going to leave the book mostly unchallenged.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[You broke the build!]]></title>
