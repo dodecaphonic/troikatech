@@ -4,7 +4,7 @@
   <title><![CDATA[Troika Tech]]></title>
   <link href="http://troikatech.com/atom.xml" rel="self"/>
   <link href="http://troikatech.com/"/>
-  <updated>2014-01-12T14:53:47-02:00</updated>
+  <updated>2014-01-12T15:35:13-02:00</updated>
   <id>http://troikatech.com/</id>
   <author>
     <name><![CDATA[Vitor Capela]]></name>
@@ -22,11 +22,11 @@
 
 <h2>Structure</h2>
 
-<p>It starts with mr. Odersky&rsquo;s already familiar lecture style, reviewing some of what was taught in the previous course and expanding on some topics, such as Monads. While I can&rsquo;t talk about the subject from a theoretical standpoint or offer a perfect explanation, I feel I grasp how they can be used to compose behavior and express functionality better.</p>
+<p>It starts with mr. Odersky&rsquo;s already familiar style, reviewing some of what was taught in the previous course and expanding on some topics. The dreaded Monads were dealt with, and while I can&rsquo;t talk about the subject from a theoretical standpoint or offer a perfect explanation, I feel I grasp how they can be used to compose behavior and express functionality better.</p>
 
-<p>The second part was the highlight, for me. Erik Meijer (from LINQ and Reactive Extensions fame on the .NET land) has an incredibly upbeat energy and great sense of humor, which carry you like a breeze through the amazing concepts he expresses. I loved thinking about Event streams and how to compose them using monadic combinators in the form of <code>Observables</code> (combined with <code>Subscriptions</code>, <code>Schedulers</code>, <code>Promises</code> and <code>Futures</code>). I think this affected me the most as I could clearly see how to mix and match things to add behavior.</p>
+<p>The second part was the highlight, for me. Erik Meijer (from LINQ and Reactive Extensions fame on the .NET land) has an incredibly upbeat energy and great sense of humor, which carry you like a breeze through the amazing concepts he expresses. I loved thinking about Event streams and how to compose them using monadic combinators in the form of <code>Observables</code> (alongside <code>Subscriptions</code>, <code>Schedulers</code>, <code>Promises</code> and <code>Futures</code>). I think this affected me the most, for I could clearly see how to mix and match things to add behavior.</p>
 
-<p>The third part was also very good. Roland Kuhn (Akka&rsquo;s tech lead) has a soft-spoken style that relaxes you while he builds the framework over which you&rsquo;ll learn about Actors, building distributed systems and dealing with failure in that model. He also shows piece by piece what an incredible piece of software <a href="http://akka.io">Akka</a> is (which led me to explore more of <a href="https://github.com/celluloid/celluloid">Celluloid</a>, a topic for a future post).</p>
+<p>The third part was also very good. Roland Kuhn (Akka&rsquo;s tech lead) has a soft-spoken style that relaxes you while he lays the groundwork over which you&rsquo;ll learn about Actors, building distributed systems and dealing with failure in that model. He also shows piece by piece what <a href="http://akka.io">Akka</a> can do (which led me to explore more of <a href="https://github.com/celluloid/celluloid">Celluloid</a>, a topic for a future post).</p>
 
 <h2>Exercises</h2>
 
@@ -36,7 +36,7 @@
 
 <p><img src="http://dl.dropboxusercontent.com/s/ml6pp98zwfufbob/2014-01-12%20at%2014.52.png" alt="Epidemy simulation" /></p>
 
-<p>Erik Meijer&rsquo;s had cool, practical examples: you build a node-style web server (with a Reactor loop) in the first week and a Wikipedia Swing client using reactive streams for GUI events and networking in the second. It makes you want to write everything in this style, as it makes it considerably easier to think about <em>what</em> happens <em>when</em> with <em>whom</em>.</p>
+<p>Erik Meijer&rsquo;s had cool, practical examples: you build a node-style web server (with a Reactor loop) in the first week and a Wikipedia Swing client using reactive streams for GUI events and networking in the second. It makes you want to write everything in this style, because it becomes much easier to think about <em>what</em> happens <em>when</em> with <em>whom</em>.</p>
 
 <p>The third section, on Akka, takes the prize in this area: first you redo the binary search tree exercise from the first course using Actors, which I found a great idea, as you&rsquo;re confronted just with the new concepts. Then you are challenged into building a (simplified) distributed key-value store, including replication and joining of new nodes. Describing this exercise to colleagues made them want to take the course. I hope they do.</p>
 
@@ -44,25 +44,25 @@
 
 <p>Being forced to use more Scala made my interest in it grow more and more. <a href="https://al3x.net/">Alex Payne</a> has said that it feels a bit like Ruby in its expressiveness, and I got that while building the exercises. I confess it is refreshing and enlightening to use types as a way of reasoning, and not as something that just soothes a compiler with a frail ego.</p>
 
-<p>On the other hand, tooling was problematic. As an Emacs user, I try to keep in it at all times, and surprisingly (coupled with <a href="https://github.com/aemoncannon/ensime">ENSIME</a>) the experience was not bad. Still I tried to take the opportunity to learn a little bit more about what is offered and how well it works, and the experience was not so great. Importing the provided Eclipse projects sometimes resulted in missing dependencies; importing the sbt project in IntelliJ IDEA popped up error messages complaining about the TEST context, which some of the students claimed could be solved using nightly builds of its Scala and SBT plugins.</p>
+<p>On the other hand, tooling was problematic. Being an Emacs user, I try to keep in it at all times, and surprisingly (coupled with <a href="https://github.com/aemoncannon/ensime">ENSIME</a>) the experience was not bad. Still I tried to take the opportunity to learn a little bit more about what is offered and how well it works, and the experience was not so great. Importing the provided Eclipse projects sometimes resulted in missing dependencies; importing the sbt project in IntelliJ IDEA resulted in error messages complaining about the TEST context, which some of the students claimed could be solved with nightly builds of its Scala and SBT plugins.</p>
 
 <p>In ENSIME it mostly worked fine. Sometimes I needed to run the tests before generating the project in <code>sbt</code>, or to regenerate the project as I fleshed out the code. This was not that that awful, in the end: coming from a world of no static types, no code completion, poor navigation (seriously, guys, I&rsquo;ve used dynamic languages for over 15 years, and grep/ack/ag is not a good replacement) and pretty crude automatic refactorings, it felt like I was thrown into a better world. I find myself missing it in my daily Ruby dealings.</p>
 
 <p><img src="http://dl.dropboxusercontent.com/s/c0ce5j0jlknn90r/2014-01-12%20at%2014.47.png" alt="ENSIME as I worked through the exercises" /></p>
 
-<p>I realize the situation with Eclipse and IntelliJ may be specific to this situation, as the canonical thing to use was sbt. However, being that sbt is the canonical build tool, period, it made the experience messy, and complaints in the forum suggest there&rsquo;s still a lot to improve here. As software developers we are used to hurdles and to learning workarounds, but this is the type of thing that turns off someone that is not yet invested in the tech.</p>
+<p>I realize the situation with Eclipse and IntelliJ may be specific to the course, as the canonical thing to use was sbt. However, being that sbt is the canonical build tool, period, it made the experience messy, and complaints in the forum suggest there&rsquo;s still a lot to improve here. We developers are used these sorts of hurdles (and, let&rsquo;s be frank, to learning workarounds), but this is the type of thing that turns off someone that is not yet invested in the tech.</p>
 
 <h2>What I learned about myself</h2>
 
-<p>Comparing my approach to my fellow students&#8217;, I found I could go through most things relatively easily, based on experience alone, but that eventually I had to exercise muscles in areas I consider mostly weak: self-reliance and grit. I had to overcome my impulse to procrastinante when facing a roadblock, and also to not feel guilty about going to the forums, reading other people&rsquo;s struggles or using a test suite that some one kindly provided for everyone else.</p>
+<p>Comparing my approach to my fellow students&#8217;, I found I could go through most things relatively easily, based on experience alone, but that eventually I had to exercise muscles in areas I consider mostly weak: self-reliance and grit. It was necessary to overcome my impulse to procrastinate when facing a roadblock, and also to not feel guilty about going to the forums, reading about other people&rsquo;s struggles or using a test suite that some kind soul provided for everyone else.</p>
 
-<p>To face things that are known but empirically unexplored made me question my ability, and forced a hard look at my self-image. I took great care and pain to motivate myself and think of the outcome, of being able to do things I can talk about from reading hundreds of articles and watching dozens of screencasts. The sense of pride from having completed this without delaying a single exercise makes me believe I can accomplish more. Getting a near-perfect score (unfortunatelly I wasn&rsquo;t thorough in the Simulations exercise) is very sweet.</p>
+<p>To face things that are known but empirically unexplored made me question my ability, and demanded a hard look at my self-image. It took great care and some pain to keep motivated and think of the outcome. The sense of pride from having completed this without delaying a single exercise makes me believe I can accomplish more. Furthermore, getting a near-perfect score for the effort is very sweet.</p>
 
-<p>I hope I can become a little more patient with time. My instinct is to go for quick gratification, for tight feedback loops, and that is not always possible (or even desirable). Standing on the shoulder of giants requires a climb; I need to not be discouraged after the first stretch.</p>
+<p>I hope this helps me become a little more patient. My instinct is to go for quick intellectual gratification, for tight feedback loops, and that is not always possible (or even desirable). Standing on the shoulder of giants requires a climb; I must remember not be discouraged after the first stretch.</p>
 
 <h2>Conclusion</h2>
 
-<p>I recommend everyone to go through this course. It is challenging, rewarding and (for me) a good source of personal growth. Scala is very interesting, and worth of your time. Akka is also incredible, and I found the different teaching styles refreshing, a great way to keep the learner engaged.</p>
+<p>I recommend everyone to go through this course. It is challenging, rewarding and (for me) a good source of personal growth. Scala is very interesting, and worthy of your time, and Akka is incredible. I found the different teaching styles refreshing, a great way to keep the learner engaged. All in all, a delightful experience.</p>
 ]]></content>
   </entry>
   
