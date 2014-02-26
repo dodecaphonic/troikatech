@@ -9,7 +9,7 @@
   <meta name="author" content="Vitor Capela">
 
   
-  <meta name="description" content="After the positive experience learning some Scala and some functional patterns in Functional Programming Principles in Scala, I was excited to &hellip;">
+  <meta name="description" content="At my main job, we have a large datastructure that takes considerable CPU time to be built, but remains unchanged thereafter. Its job is to geocode &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,141 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/02/26/websocket-webmachine/">WebSockets in Ruby</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-26T09:03:00-03:00" pubdate data-updated="true">Feb 26<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>At my main job, we have a large datastructure that takes considerable CPU time to be built, but remains unchanged thereafter. Its job is to geocode positions to and from a local reference system, which in turn provides us the ability to pin records, for instance, to a place on a Road, and know to which coordinate pair a local reference would correspond.</p>
+
+<p>For the first pass, I built the Ruby library for the geocoding and a simple (Sinatra-based) webservice. This worked fine for a while until the Client required that <strong>every</strong> mouse move performed a conversion. Said change, prompted me to build the same geocoding infrastructure again in JavaScript, and all were happy for a while.</p>
+
+<p>As it usually goes, a new decision was made to support multiple Roads per User. Now, a download of 800KB of data (stored in an IndexedDB for later sessions) was tolerable; potentially multiple megabytes would be deadly, even if the software could be used before that constant feedback of conversions was given &mdash; it just became one of those features Users hold on to.</p>
+
+<p>I knew that we had to go for a solution that kept that intact and made the whole thing manageable. I had dabbled in WebSockets before (with <a href="http://nodejs.org">node.js</a> and <a href="http://socket.io/">Socket.IO</a>) and kind of knew the lay of the land. Still, from previous searches, I was also aware there was a dearth of Ruby solutions, and for a moment considered going with my JavaScript port on node. The thought gave me shivers.</p>
+
+<h2>The contenders</h2>
+
+<p>The first step was finding out what could be used. This is what I evaluated:</p>
+
+<ul>
+<li><a href="https://github.com/simulacre/sinatra-websocket">sinatra-websocket</a></li>
+<li><a href="https://github.com/faye/faye-websocket-ruby">faye-websocket</a></li>
+<li><a href="https://github.com/websocket-rails/websocket-rails">websocket-rails</a></li>
+<li><a href="https://github.com/ngauthier/tubesock">tubesock</a></li>
+<li><a href="https://github.com/seancribbs/webmachine-ruby">webmachine-ruby</a></li>
+</ul>
+
+
+<p>The first three are EventMachine-based; <em>tubesock</em> uses <a href="http://blog.phusion.nl/2013/01/23/the-new-rack-socket-hijacking-api/">rack hijacking</a>; <em>webmachine-ruby</em> provides WebSockets via <a href="https://github.com/celluloid/reel">Reel</a>, a Celluloid::IO-based HTTP server.</p>
+
+<p>At first, considering I was already using Sinatra, I tried <em>sinatra-websocket</em>. For some reason I just couldn&rsquo;t get the connection to be upgraded to a WebSocket, and decided to move on quickly. <em>faye-websocket</em> I just skipped, to be frank.</p>
+
+<p>The next two suffered from the same problem: after booting Rails and loading the structure, I was left with only enough memory for a couple dozen or so clients on a small Heroku dyno. Also, Rails&#8217; boot time coupled with building the thing occasionally made Heroku think something had gone wrong, and often the process crashed before the service went up.</p>
+
+<p>The only one left, if you&rsquo;re counting, was <em>webmachine-ruby</em>.</p>
+
+<h2>webmachine-ruby</h2>
+
+<p>Setting up was relatively easy. To ramp up, I first migrated the original HTTP-based service to its resource structure. It has more of an OO flair than both Rails and Sinatra, with the caveat that it provides a lot less (by design). The dispatcher is easy to understand, and I quite enjoyed toying with the <a href="https://github.com/seancribbs/webmachine-ruby#visual-debugger">visual debugger</a>.</p>
+
+<p>Moving to a WebSocket, however, changes everything. As far as I can tell (and the documentation specifies) you completely skip over the regular infrastructure by providing a <em>callable</em> to a configuration option, as such:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>App = Webmachine::Application do |app|
+</span><span class='line'>  app.configure do |config|
+</span><span class='line'>    config.adapter = :Reel
+</span><span class='line'>    config.adapter_options[:websocket_handler] = proc do |websocket|
+</span><span class='line'>      websocket &lt;&lt; "hello, world"
+</span><span class='line'>    end
+</span><span class='line'>  end
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That is pretty much what the docs say. Since it only expects the handler to respond to <em>#call</em>, you can write your own <em>ad-hoc</em> dispatcher:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>class WebsocketHandler
+</span><span class='line'>  def call(websocket)
+</span><span class='line'>    message = websocket.read
+</span><span class='line'>    # do something with the message, call methods on other objects, log stuff, have your fun
+</span><span class='line'>  end
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>What the docs don&rsquo;t address are some basics of sockets programming. If you see your handler hang and never respond again, requiring you to restart, don&rsquo;t fret: you just have to provide a loop to read from the the socket and let Celluloid::IO do its non-blocking magic:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>class WebsocketHandler
+</span><span class='line'>  def call(websocket)
+</span><span class='line'>    loop do
+</span><span class='line'>      message = websocket.read
+</span><span class='line'>      # do something with the message, call methods on other objects, log stuff, have your fun
+</span><span class='line'>    end
+</span><span class='line'>  end
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Don&rsquo;t worry: your CPU won&rsquo;t be pegged at 100%, because non-blocking. You&rsquo;ll be subjected, however, to the same limitations node has regarding CPU usage and its event handlers (i.e. if you are CPU-intensive, you&rsquo;ll affect throughput).</p>
+
+<p>Luckily, we have threads in Ruby. I decided to take advantage of that by assigning each client to a Celluloid Actor, which allows me to provide some of the CPU-intensive operations without compromising (at least not heavily) other Users. It has been working fine so far.</p>
+
+<h2>What&rsquo;s missing</h2>
+
+<p>My solution doesn&rsquo;t take into account non-WebSocket clients, but it should. <em>webmachine-ruby</em> makes it easy by allowing you to implement streaming APIs without much trouble, and I suppose it&rsquo;ll only take a bit of JS to fallback from one to the other and provide an abstract connection to consumers.</p>
+
+<p>The documentation also doesn&rsquo;t go over all the events that can happen on the socket (<em>onerror</em>, <em>onclose</em>, <em>onopen</em>, <em>onmessage</em>). You can see them as methods on the socket, each taking a block, but for my use case I just let the actor crash and be done with it. If I&rsquo;m missing some cleanup, please let me know.</p>
+
+<p>This architecture also doesn&rsquo;t provide a ready-baked pub/sub system, with channels and message brokers. If that&rsquo;s more in the spirit of what you need, check out <a href="http://faye.jcoglan.com/">faye</a> and <a href="https://github.com/websocket-rails/websocket-rails">websocket-rails</a>.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -359,6 +494,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/02/26/websocket-webmachine/">WebSockets in Ruby</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/01/12/reactive/">&#8220;Principles of Reactive Programming&#8221;, a Review</a>
       </li>
     
@@ -372,10 +511,6 @@
     
       <li class="post">
         <a href="/blog/2013/09/05/momentum-this-ineffable-thing/">Momentum, This Ineffable Thing</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/08/14/getting-things-done-dot-dot-dot-eventually-dot/">Getting Things Done&#8230; Eventually.</a>
       </li>
     
   </ul>
