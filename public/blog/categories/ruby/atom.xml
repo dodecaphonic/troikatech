@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ruby | Troika Tech]]></title>
   <link href="http://troikatech.com/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://troikatech.com/"/>
-  <updated>2014-04-02T10:43:35-03:00</updated>
+  <updated>2014-04-02T11:53:12-03:00</updated>
   <id>http://troikatech.com/</id>
   <author>
     <name><![CDATA[Vitor Capela]]></name>
@@ -624,7 +624,7 @@ success: 100 tests
 
 <p>Shrinking is not as good in Rantly. It works ok a lot of the time, but it could be improved. On the surface, from skimming the algorithms used in ScalaCheck and Rantly, it doesn&rsquo;t <em>seem</em> that different, but over that side of the line the patterns in minimization seem easier to spot.</p>
 
-<p>There&rsquo;s also no mechanism to test stateful code. ScalaCheck has <a href="https://github.com/rickynils/scalacheck/wiki/User-Guide#stateful-testing">Commands</a> to help in modeling state changes, and I&rsquo;m aware <a href="https://github.com/manopapad/proper">PropEr</a> and [QuickCheck for Erlang][qcerlang] also provide something in that direction.</p>
+<p>There&rsquo;s also no mechanism to test stateful code. ScalaCheck has <a href="https://github.com/rickynils/scalacheck/wiki/User-Guide#stateful-testing">Commands</a> to help in modeling state changes, and I&rsquo;m aware <a href="https://github.com/manopapad/proper">PropEr</a> and <a href="http://www.quviq.com/">QuickCheck for Erlang</a> also provide something in that direction.</p>
 
 <p>One minor thing is that integration with RSpec and MiniTest could be improved. Its output pollutes the test run, and on large suites it becomes hard to know the relationship between a failed property and a failed test. It should be easy to fix for anyone motivated. On that note, there&rsquo;s no ready-made extension for MiniTest (although adding one is trivial enough that I&rsquo;m sending a PR to fix it).</p>
 

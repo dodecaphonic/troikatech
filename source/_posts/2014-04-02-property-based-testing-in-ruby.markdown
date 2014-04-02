@@ -541,4 +541,4 @@ I hope I have proven, even if with a craptastic example, that property-testing c
 [coursera]: http://coursera.org
 [sccommands]: https://github.com/rickynils/scalacheck/wiki/User-Guide#stateful-testing
 [proper]: https://github.com/manopapad/proper
-[quviq]: http://www.quviq.com/
+[qcerlang]: http://www.quviq.com/
