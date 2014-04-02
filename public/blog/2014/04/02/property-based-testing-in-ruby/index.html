@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Troika Tech</title>
+  <title>Property-based testing in Ruby - Troika Tech</title>
   <meta name="author" content="Vitor Capela">
 
   
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://troikatech.com">
+  <link rel="canonical" href="http://troikatech.com/blog/2014/04/02/property-based-testing-in-ruby">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Troika Tech" type="application/atom+xml">
@@ -75,15 +75,12 @@
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2014/04/02/property-based-testing-in-ruby/">Property-based Testing in Ruby</a></h1>
+      <h1 class="entry-title">Property-based Testing in Ruby</h1>
     
     
       <p class="meta">
@@ -106,7 +103,7 @@
   </header>
 
 
-  <div class="entry-content"><p>For the past year or so I have slowly been dipping my feet into the vast functional programming seas. From taking the awesome <a href="http://coursera.org">Coursera</a> <a href="https://www.coursera.org/course/progfun">offerings</a> <a href="https://www.coursera.org/course/reactive">from Typesafe</a> to slowly working through Rúnar Bjarnason&rsquo;s and Paul Chiusano&rsquo;s <em><a href="http://www.manning.com/bjarnason/">Functional Programming in Scala</a></em>, my mind has been expanding proportionally to the time I dedicate to learning its ways. It has been incredibly rewarding and humbling.</p>
+<div class="entry-content"><p>For the past year or so I have slowly been dipping my feet into the vast functional programming seas. From taking the awesome <a href="http://coursera.org">Coursera</a> <a href="https://www.coursera.org/course/progfun">offerings</a> <a href="https://www.coursera.org/course/reactive">from Typesafe</a> to slowly working through Rúnar Bjarnason&rsquo;s and Paul Chiusano&rsquo;s <em><a href="http://www.manning.com/bjarnason/">Functional Programming in Scala</a></em>, my mind has been expanding proportionally to the time I dedicate to learning its ways. It has been incredibly rewarding and humbling.</p>
 
 <p>One such reward has been coming into direct touch with property-based testing. This technique, first developed by <a href="http://en.wikipedia.org/wiki/QuickCheck">QuickCheck</a> in Haskell-land, spins automated testing on its head: instead of codifying what is proper behavior by asserting that the outputs for given inputs match what is expected, the tester establishes logical properties about what should happen and lets the tool generate loads of inputs to check if they hold. If something goes wrong, the tool will then try to find the smallest test input that breaks the property (<em>falsifies</em> it), a process called <em>shrinking</em>; if it can&rsquo;t find anything, you can sigh with relief and think about what to scrutinize next.</p>
 
@@ -994,71 +991,16 @@
 
 <p>I hope I have proven, even if with a craptastic example, that property-testing can aid you in writing better Ruby code. Our community is great when it comes to using tests both as a design and as a verification tool, and QuickCheck (via Rantly) is a new way of thinking about them. You should keep your TDD/BDD to carve out your objects and responsibilities, but also add property checks where suitable to strengthen your confidence in the system.</p>
 </div>
-  
-  
 
 
-    </article>
-  
-  
-    <article>
+  <footer>
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/03/21/pt-br-palestra-sobre-celluloid-no-rubyonrio/">(PT-BR) Palestra Sobre Celluloid No RubyOnRio</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
   
 
+<span class="byline author vcard">Posted by <span class="fn">Vitor Capela</span></span>
 
-<time datetime="2014-03-21T16:10:00-03:00" pubdate data-updated="true">Mar 21<span>st</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>No dia 15 de março de 2014, aproveitei o encontro do <a href="http://rubyonrio.org">RubyOnRio</a> para falar sobre <a href="https://github.com/celluloid/celluloid">Celluloid</a>, uma implementação do Actor Model para Ruby. Como programação reativa, concorrência, paralelismo e quetais têm ocupado minha mente nos últimos meses, achei por bem conversar com o pessoal sobre como isso é relevante para o futuro do desenvolvimento de software e para o Ruby em si, constantemente sob ameaça (se Hacker News for parâmetro) de ser soterrado por uma tecnologia mais antenada com os novos tempos.</p>
-
-<script async class="speakerdeck-embed" data-id="7acca2a0935901315c4a3abe98d15494" data-ratio="1.34031413612565" src="//speakerdeck.com/assets/embed.js"></script>
-
-
-<p>A ideia da minha apresentação foi dar uma pincelada nos problemas clássicos de threading, explicar <em>en passant</em> as ideias do Actor Model, e por fim encerrar na aplicação disso dentro do Celluloid. Claro que há informações vitais que ficaram de fora, que a superficialidade pode ser criticada, que o palestrante é meio capenga, mas espero que no cômputo geral o resultado tenha agradado.</p>
-
-<iframe width="560" height="315" src="//www.youtube.com/embed/0t0BlDdWQQY" frameborder="0" allowfullscreen></iframe>
-
-
-<iframe width="560" height="315" src="//www.youtube.com/embed/_y6KbkqklkQ" frameborder="0" allowfullscreen></iframe>
-
-
-<p>Por fim apresentei um projetinho que fiz especialmente para o encontro, o <a href="https://github.com/dodecaphonic/balladina-ruby">Balladina</a>. Foi divertido fazê-lo, e aprendi bastante coisa sobre o Celluloid no processo. Pude também contrastar algumas coisas com a parca experiência que tive com o Akka no <a href="/blog/2014/01/12/reactive/">curso do Coursera</a>, e a maturidade do Celluloid relativa à do Akka me deixou esperançoso de um futuro bacana no Ruby. Vamos torcer pelo melhor.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/02/26/websocket-webmachine/">WebSockets in Ruby</a></h1>
-    
-    
-      <p class="meta">
-        
 
 
 
@@ -1070,394 +1012,38 @@
   
 
 
-<time datetime="2014-02-26T09:03:00-03:00" pubdate data-updated="true">Feb 26<span>th</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>At my main job, we have a large datastructure that takes considerable CPU time to be built, but remains unchanged thereafter. Its job is to geocode positions to and from a local reference system, which in turn provides us the ability to pin records, for instance, to a place on a Road, and know to which coordinate pair a local reference would correspond.</p>
-
-<p>For the first pass, I built the Ruby library for the geocoding and a simple (Sinatra-based) webservice. This worked fine for a while until the Client required that <strong>every</strong> mouse move performed a conversion. Said change, prompted me to build the same geocoding infrastructure again in JavaScript, and all were happy for a while.</p>
-
-<p>As it usually goes, a new decision was made to support multiple Roads per User. Now, a download of 800KB of data (stored in an IndexedDB for later sessions) was tolerable; potentially multiple megabytes would be deadly, even if the software could be used before that constant feedback of conversions was given &mdash; it just became one of those features Users hold on to.</p>
-
-<p>I knew that we had to go for a solution that kept that intact and made the whole thing manageable. I had dabbled in WebSockets before (with <a href="http://nodejs.org">node.js</a> and <a href="http://socket.io/">Socket.IO</a>) and kind of knew the lay of the land. Still, from previous searches, I was also aware there was a dearth of Ruby solutions, and for a moment considered going with my JavaScript port on node. The thought gave me shivers.</p>
-
-<h2>The contenders</h2>
-
-<p>The first step was finding out what could be used. This is what I evaluated:</p>
-
-<ul>
-<li><a href="https://github.com/simulacre/sinatra-websocket">sinatra-websocket</a></li>
-<li><a href="https://github.com/faye/faye-websocket-ruby">faye-websocket</a></li>
-<li><a href="https://github.com/websocket-rails/websocket-rails">websocket-rails</a></li>
-<li><a href="https://github.com/ngauthier/tubesock">tubesock</a></li>
-<li><a href="https://github.com/seancribbs/webmachine-ruby">webmachine-ruby</a></li>
-</ul>
-
-
-<p>The first three are EventMachine-based; <em>tubesock</em> uses <a href="http://blog.phusion.nl/2013/01/23/the-new-rack-socket-hijacking-api/">rack hijacking</a>; <em>webmachine-ruby</em> provides WebSockets via <a href="https://github.com/celluloid/reel">Reel</a>, a Celluloid::IO-based HTTP server.</p>
-
-<p>At first, considering I was already using Sinatra, I tried <em>sinatra-websocket</em>. For some reason I just couldn&rsquo;t get the connection to be upgraded to a WebSocket, and decided to move on quickly. <em>faye-websocket</em> I just skipped, to be frank.</p>
-
-<p>The next two suffered from the same problem: after booting Rails and loading the structure, I was left with only enough memory for a couple dozen or so clients on a small Heroku dyno. Also, Rails&#8217; boot time coupled with building the thing occasionally made Heroku think something had gone wrong, and often the process crashed before the service went up.</p>
-
-<p>The only one left, if you&rsquo;re counting, was <em>webmachine-ruby</em>.</p>
-
-<h2>webmachine-ruby</h2>
-
-<p>Setting up was relatively easy. To ramp up, I first migrated the original HTTP-based service to its resource structure. It has more of an OO flair than both Rails and Sinatra, with the caveat that it provides a lot less (by design). The dispatcher is easy to understand, and I quite enjoyed toying with the <a href="https://github.com/seancribbs/webmachine-ruby#visual-debugger">visual debugger</a>.</p>
-
-<p>Moving to a WebSocket, however, changes everything. As far as I can tell (and the documentation specifies) you completely skip over the regular infrastructure by providing a <em>callable</em> to a configuration option, as such:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>App = Webmachine::Application do |app|
-</span><span class='line'>  app.configure do |config|
-</span><span class='line'>    config.adapter = :Reel
-</span><span class='line'>    config.adapter_options[:websocket_handler] = proc do |websocket|
-</span><span class='line'>      websocket &lt;&lt; "hello, world"
-</span><span class='line'>    end
-</span><span class='line'>  end
-</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
-
-
-<p>That is pretty much what the docs say. Since it only expects the handler to respond to <em>#call</em>, you can write your own <em>ad-hoc</em> dispatcher:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>class WebsocketHandler
-</span><span class='line'>  def call(websocket)
-</span><span class='line'>    message = websocket.read
-</span><span class='line'>    # do something with the message, call methods on other objects, log stuff, have your fun
-</span><span class='line'>  end
-</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
-
-
-<p>What the docs don&rsquo;t address are some basics of sockets programming. If you see your handler hang and never respond again, requiring you to restart, don&rsquo;t fret: you just have to provide a loop to read from the the socket and let Celluloid::IO do its non-blocking magic:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>class WebsocketHandler
-</span><span class='line'>  def call(websocket)
-</span><span class='line'>    loop do
-</span><span class='line'>      message = websocket.read
-</span><span class='line'>      # do something with the message, call methods on other objects, log stuff, have your fun
-</span><span class='line'>    end
-</span><span class='line'>  end
-</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Don&rsquo;t worry: your CPU won&rsquo;t be pegged at 100%, because non-blocking. You&rsquo;ll be subjected, however, to the same limitations node has regarding CPU usage and its event handlers (i.e. if you are CPU-intensive, you&rsquo;ll affect throughput).</p>
-
-<p>Luckily, we have threads in Ruby. I decided to take advantage of that by assigning each client to a Celluloid Actor, which allows me to provide some of the CPU-intensive operations without compromising (at least not heavily) other Users. It has been working fine so far.</p>
-
-<h2>What&rsquo;s missing</h2>
-
-<p>My solution doesn&rsquo;t take into account non-WebSocket clients, but it should. <em>webmachine-ruby</em> makes it easy by allowing you to implement streaming APIs without much trouble, and I suppose it&rsquo;ll only take a bit of JS to fallback from one to the other and provide an abstract connection to consumers.</p>
-
-<p>The documentation also doesn&rsquo;t go over all the events that can happen on the socket (<em>onerror</em>, <em>onclose</em>, <em>onopen</em>, <em>onmessage</em>). You can see them as methods on the socket, each taking a block, but for my use case I just let the actor crash and be done with it. If I&rsquo;m missing some cleanup, please let me know.</p>
-
-<p>This architecture also doesn&rsquo;t provide a ready-baked pub/sub system, with channels and message brokers. If that&rsquo;s more in the spirit of what you need, check out <a href="http://faye.jcoglan.com/">faye</a> and <a href="https://github.com/websocket-rails/websocket-rails">websocket-rails</a>.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
+<time datetime="2014-04-02T10:32:00-03:00" pubdate data-updated="true">Apr 2<span>nd</span>, 2014</time>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/01/12/reactive/">&#8220;Principles of Reactive Programming&#8221;, a Review</a></h1>
-    
-    
-      <p class="meta">
-        
 
-
-
-
-
-
-
-
+<span class="categories">
   
+    <a class='category' href='/blog/categories/fp/'>fp</a>, <a class='category' href='/blog/categories/haskell/'>haskell</a>, <a class='category' href='/blog/categories/quickcheck/'>quickcheck</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>, <a class='category' href='/blog/categories/scala/'>scala</a>, <a class='category' href='/blog/categories/testing/'>testing</a>
+  
+</span>
 
 
-<time datetime="2014-01-12T13:15:00-02:00" pubdate data-updated="true">Jan 12<span>th</span>, 2014</time>
-        
-      </p>
+    </p>
     
-  </header>
-
-
-  <div class="entry-content"><p>After the positive experience learning some Scala and some functional patterns in <a href="https://www.coursera.org/course/progfun">Functional Programming Principles in Scala</a>, I was excited to undertake the new course from Martin Odersky and co. The fact that it would pick up from where it left off and build on the <a href="http://www.reactivemanifesto.org/">Reactive brouhaha</a> was icing in the cake; after all, the techniques and technologies approached in the lectures highlight some of what Scala does best.</p>
-
-<h2>Structure</h2>
-
-<p>It starts with mr. Odersky&rsquo;s already familiar style, reviewing some of what was taught in the previous course and expanding on some topics. The dreaded Monads were dealt with, and while I can&rsquo;t talk about the subject from a theoretical standpoint or offer a perfect explanation, I feel I grasp how they can be used to compose behavior and express functionality better.</p>
-
-<p>The second part was the highlight, for me. Erik Meijer (from LINQ and Reactive Extensions fame on the .NET land) has an incredibly upbeat energy and great sense of humor, which carry you like a breeze through the amazing concepts he expresses. I loved thinking about Event streams and how to compose them using monadic combinators in the form of <code>Observables</code> (alongside <code>Subscriptions</code>, <code>Schedulers</code>, <code>Promises</code> and <code>Futures</code>). I think this affected me the most, for I could clearly see how to mix and match things to add behavior.</p>
-
-<p>The third part was also very good. Roland Kuhn (Akka&rsquo;s tech lead) has a soft-spoken style that relaxes you while he lays the groundwork over which you&rsquo;ll learn about Actors, building distributed systems and dealing with failure in that model. He also shows piece by piece what <a href="http://akka.io">Akka</a> can do (which led me to explore more of <a href="https://github.com/celluloid/celluloid">Celluloid</a>, a topic for a future post).</p>
-
-<h2>Exercises</h2>
-
-<p>Everything comes together with each week&rsquo;s exercises. The first was a quick-and-simple one that explores <a href="http://www.scalacheck.org/">property testing</a>. I went through it quickly, but I still find it hard to apply that mode of thinking, and didn&rsquo;t get much out of the technique later on. I know this is a personal limitation, as some people in the course forums mentioned using it to great effect.</p>
-
-<p>After that, you get a wake-up call that this is gonna require some hard work right as you&rsquo;re asked to build two simulations: one of circuits, with emphasis on building a demultiplexer, and one of an epidemy. The fact that this involves timing and sequencing makes you think about state and purely functional programs. Building something substantial (and fun to watch) gives you an appreciation of their usefulness.</p>
-
-<p><img src="http://dl.dropboxusercontent.com/s/ml6pp98zwfufbob/2014-01-12%20at%2014.52.png" alt="Epidemy simulation" /></p>
-
-<p>Erik Meijer&rsquo;s had cool, practical examples: you build a node-style web server (with a Reactor loop) in the first week and a Wikipedia Swing client using reactive streams for GUI events and networking in the second. It makes you want to write everything in this style, because it becomes much easier to think about <em>what</em> happens <em>when</em> with <em>whom</em>.</p>
-
-<p>The third section, on Akka, takes the prize in this area: first you redo the binary search tree exercise from the first course using Actors, which I found a great idea, as you&rsquo;re confronted just with the new concepts. Then you are challenged into building a (simplified) distributed key-value store, including replication and joining of new nodes. Describing this exercise to colleagues made them want to take the course. I hope they do.</p>
-
-<h2>Scala</h2>
-
-<p>Being forced to use more Scala made my interest in it grow more and more. <a href="https://al3x.net/">Alex Payne</a> has said that it feels a bit like Ruby in its expressiveness, and I got that while building the exercises. I confess it is refreshing and enlightening to use types as a way of reasoning, and not as something that just soothes a compiler with a frail ego.</p>
-
-<p>On the other hand, tooling was problematic. Being an Emacs user, I try to keep in it at all times, and surprisingly (coupled with <a href="https://github.com/aemoncannon/ensime">ENSIME</a>) the experience was not bad. Still I tried to take the opportunity to learn a little bit more about what is offered and how well it works, and the experience was not so great. Importing the provided Eclipse projects sometimes resulted in missing dependencies; importing the sbt project in IntelliJ IDEA resulted in error messages complaining about the TEST context, which some of the students claimed could be solved with nightly builds of its Scala and SBT plugins.</p>
-
-<p>In ENSIME it mostly worked fine. Sometimes I needed to run the tests before generating the project in <code>sbt</code>, or to regenerate the project as I fleshed out the code. This was not that that awful, in the end: coming from a world of no static types, no code completion, poor navigation (seriously, guys, I&rsquo;ve used dynamic languages for over 15 years, and grep/ack/ag is not a good replacement) and pretty crude automatic refactorings, it felt like I was thrown into a better world. I find myself missing it in my daily Ruby dealings.</p>
-
-<p><img src="http://dl.dropboxusercontent.com/s/c0ce5j0jlknn90r/2014-01-12%20at%2014.47.png" alt="ENSIME as I worked through the exercises" /></p>
-
-<p>I realize the situation with Eclipse and IntelliJ may be specific to the course, as the canonical thing to use was sbt. However, being that sbt is the canonical build tool, period, it made the experience messy, and complaints in the forum suggest there&rsquo;s still a lot to improve here. We developers are used these sorts of hurdles (and, let&rsquo;s be frank, to learning workarounds), but this is the type of thing that turns off someone that is not yet invested in the tech.</p>
-
-<h2>What I learned about myself</h2>
-
-<p>Comparing my approach to my fellow students&#8217;, I found I could go through most things relatively easily, based on experience alone, but that eventually I had to exercise muscles in areas I consider mostly weak: self-reliance and grit. It was necessary to overcome my impulse to procrastinate when facing a roadblock, and also to not feel guilty about going to the forums, reading about other people&rsquo;s struggles or using a test suite that some kind soul provided for everyone else.</p>
-
-<p>To face things that are known but empirically unexplored made me question my ability, and demanded a hard look at my self-image. It took great care and some pain to keep motivated and think of the outcome. The sense of pride from having completed this without delaying a single exercise makes me believe I can accomplish more. Furthermore, getting a near-perfect score for the effort is very sweet.</p>
-
-<p>I hope this helps me become a little more patient. My instinct is to go for quick intellectual gratification, for tight feedback loops, and that is not always possible (or even desirable). Standing on the shoulder of giants requires a climb; I must remember not be discouraged after the first stretch.</p>
-
-<h2>Conclusion</h2>
-
-<p>I recommend everyone to go through this course. It is challenging, rewarding and (for me) a good source of personal growth. Scala is very interesting, and worthy of your time, and Akka is incredible. I found the different teaching styles refreshing, a great way to keep the learner engaged. All in all, a delightful experience.</p>
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://troikatech.com/blog/2014/04/02/property-based-testing-in-ruby/" data-via="dodecaphonic" data-counturl="http://troikatech.com/blog/2014/04/02/property-based-testing-in-ruby/" >Tweet</a>
+  
+  
+  
 </div>
-  
-  
 
-
-    </article>
-  
-  
-    <article>
+    
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/11/15/rework/">&#8220;REWORK&#8221;, by 37signals &mdash; &#9733;&#9733;&#9734;&#9734;&#9734;</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-11-15T11:52:00-02:00" pubdate data-updated="true">Nov 15<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><a href="http://37signals.com/remote/">
-<img class="left" src="http://37signals.com/images/remote/remote_front.png" width="400" height="600" title="'REMOTE - by Jason Fried and DHH'" >
-</a></p>
-
-<p>As a remote worker myself, I nodded my head frequently at the advantages and challenges presented, so the rating&rsquo;s not about a fundamental disagreement with the message or the intentions. Like the authors, I know from personal experience that commuting, facing a strict set of working hours, interruptions and living with the expectation of availability from others are some of the greatest dangers to productive work (creative work especially).</p>
-
-<p>I did, however, expect more than short chapters and sparse data points. Maybe it&rsquo;s the programmer in me misunderstanding the whole &ldquo;business book&rdquo; thing, but perhaps the arguments would hold more weight if they were more than anedoctal. They render the whole thing as an account of what works for 37signals &mdash; a very small and relatively unknown company in the greater scheme of things. I understand that relying on managers and employers to be swayed by arguments from authority is antithetical to the book (the thesis being that remote work is a <em>rationally</em> better decision overall), but we cannot underestimate how many small-to-medium companies manage by emulation. Maybe stronger data and clearer research could counter gut reactions better.</p>
-
-<p>I think this might be good if you need just a little push to go after this, if you&rsquo;re a bit on the fence and already considering/thinking this is a trend that should be studied and followed. If you want something to challenge your views with great insights, don&rsquo;t bother: it&rsquo;s fluffy and humane and beautifully illustrated, but you&rsquo;re probably going to leave the book mostly unchallenged.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
+        <a class="basic-alignment left" href="/blog/2014/03/21/pt-br-palestra-sobre-celluloid-no-rubyonrio/" title="Previous Post: (PT-BR) Palestra sobre Celluloid no RubyOnRio">&laquo; (PT-BR) Palestra sobre Celluloid no RubyOnRio</a>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/10/12/you-broke-the-build/">You Broke the Build!</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-10-12T18:24:00-03:00" pubdate data-updated="true">Oct 12<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>A coworker and I share rank as managers of a small team of Rails developers, an oddity created by a brief stint I had working for another company and then coming back. I used to be his manager, but when I returned my role was constrained to the technical side of things, while he took over caring for the team and client relations. It is an arrangement that suits me better, to be frank, as it lets me focus on what I do best.</p>
-
-<p>Both of us still work on code. Our approaches differ both because of our relative gaps in experience (I&rsquo;ve worked on more projects, and with Ruby specifically for a lot longer) and our personalities. The last point does not generate contention per se, but leads to clearly different stances when it comes to quality in our work: my ultimate goal is that everyone folds their branches back to <code>master</code> with tests and properly factored code; he knows tests are a force for good, but often lets them slide for different reasons.</p>
-
-<p>Recently we&rsquo;ve discussed this and the effects it has on the rest of the team. One of the junior developers has become completely test-averse, carelessly breaking parts of the suite and shrugging it off. While I have called attention to many instances of the thing, the separation of responsibilities means it&rsquo;s up to him to make changes to the process and accountability, which he vowed to do.</p>
-
-<p>That is, until he merged a branch he worked on for almost two months, clearly never running the tests, and broke the build.</p>
-
-<h3>Why am I so angry?</h3>
-
-<p>My frustration skyrocketed when I got the notification from the CI server (and many others from <a href="https://codeclimate.com/">Code Climate</a> about the decline in quality, but that&rsquo;s a subject for another post). It took me a few minutes to regain my composure, get the code, confirm <strong>NO TESTS</strong> were running, and write to him that the build was badly broken. He retorted with an excuse that surely made a lot of sense to him (&ldquo;I needed to share some code with the junior dev&rdquo;), but only got me more pissed. It was 10pm on a Friday night, and I decided to let it go.</p>
-
-<p>The whole thing left a bad taste in my mouth, though. The experience I had at the other company was terrifying precisely because a mission-critical Rails app went up without a single test, resulting in very long working hours and awful bugs in production &mdash; all in a culture that eschewed personal responsibility and poo-pooed the thought of having a <em>process</em>. Maybe I&rsquo;ve been burnt a lot more than the young guns working with me now, but I just know it will bite us down the road, and that it will result in dissatisfied customers, long nights and me not even having the energy to say &ldquo;I told you so&rdquo;. For now he can say our code isn&rsquo;t in production. But it isn&rsquo;t YET.</p>
-
-<p>That, in the end, is what makes me angry. That otherwise intelligent people can&rsquo;t see that they&rsquo;re gonna pay tenfold for the cost they are avoiding now by not learning and following best practices, and that testing, while certainly not flawless, helps you sleep peacefully knowing that the code you changed didn&rsquo;t break anything in the suite and the build.</p>
-
-<h3>How can I make it better?</h3>
-
-<p>I&rsquo;m not yet sure. I&rsquo;m often afraid that it hinges on a personal commitment to learning and improving your craft. Other times, though, I wonder if it isn&rsquo;t just an absence of mentors who are patient and didactic enough to sit beside someone that isn&rsquo;t convinced and work him or her through it, and of company cultures that accept that the time it takes to make things better is not money wasted.</p>
-
-<p>It doesn&rsquo;t help that a lot of people still don&rsquo;t know the first thing about things you and I take for granted. Most of them think <em>&ldquo;Refactoring&rdquo;</em> is a menu on their IDEs, or empty jargon to use when code needs some TLC. Forgive them, <a href="http://www.refactoring.com/">father Fowler</a>, for they do not know what they are doing. Basic concepts may have to be more evenly spread before we can talk about building the next step.</p>
-
-<p>One thing I can personally improve is on communicating clearly to my teammates and people close to me is that I care about these practices, making it clear that my interlocutor is not expected to know everything about it (I certainly don&rsquo;t). I also have to understand it may be an unwelcome message at times, and that I should just take the time it needs.</p>
-
-<h3>Final thoughts</h3>
-
-<p>It&rsquo;s hard to not cry foul when people don&rsquo;t do what they say they&rsquo;re going to. The situation that triggered this logorrhea, now that it&rsquo;s through, must be assessed not as some act of malice, but simply as the disconnect between discourse and what is perceived to be a pressing matter. And to be fair, this particular instance had a happy ending: after my frustrated emails, the dude went back and made things right with the code and the build is bright green. Hopefully it will be ok to talk about it openly as both the wrong and the right thing to do, and prove compelling enough for the junior devs and other coworkers to feel engaged.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/09/05/momentum-this-ineffable-thing/">Momentum, This Ineffable Thing</a></h1>
-    
-    
-      <p class="meta">
-        
+    </p>
+  </footer>
+</article>
 
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-09-05T23:41:00-03:00" pubdate data-updated="true">Sep 5<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Revisiting the book, it has surprised me to find a lot of the ideas familiar, some of them even mundane. Since trying it the last (three years ago? four?), I have delved a bit into functional programming via Scala (I did <a href="https://www.coursera.org/course/progfun">Martin Odersky&rsquo;s &ldquo;Functional Programming Principles in Scala&rdquo;</a> last semester) and Clojure, and the things I learned in <a href="http://mitpress.mit.edu/books/little-schemer">The Little Schemer</a> weren&rsquo;t all forgotten. The substitution model, for one, feels very natural, and recursion is not that difficult to reason about.</p>
-
-<p>What I&rsquo;m doing differently this time is following along with the <a href="http://groups.csail.mit.edu/mac/classes/6.001/abelson-sussman-lectures/">1986 lectures</a>, which at least one person in every SICP-related Reddit/HN thread has recommended (and I ignored). I usually prefer learning from books and documentation, but the lectures have the benefit of requiring focus and monotasking. Also, listening to the audience&rsquo;s questions makes me a bit more aware of what is hard for a person with the Math background but not the programming skills &mdash; the exact opposite of my situation, and a great aid in keeping things in perspective.</p>
-
-<p>As predicted, said Math-heaviness still makes me a little bit uncomfortable, but I&rsquo;m soldiering through. That means stopping at an exercise, reading Wikipedia and sometimes just taking things at face-value, as I don&rsquo;t have the intuitions someone more familiar with the subject matter would. It takes some patience, sometimes, and I would be lying if I told you it doesn&rsquo;t discourage me a bit.</p>
-
-<p>That said, Chapter 1 is done. Now on to Chapter 2. Wish me luck.</p>
 </div>
-  
-  
 
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/08/14/getting-things-done-dot-dot-dot-eventually-dot/">Getting Things Done&#8230; Eventually.</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-08-14T21:02:00-03:00" pubdate data-updated="true">Aug 14<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>As I review my to-do list, there it is: &ldquo;Read SICP and do its exercises&rdquo;. That note has been there for six years, moving from productivity tool to productivity tool, never getting done. It&rsquo;s been a <em>Project</em>, a <em>Someday</em>, in <em>Inbox</em> and even in <em>Trash</em>, in fits of rage. Sometimes I think I change my to-do software just to find one that magically will make it actionable.</p>
-
-<p>The truth is the book scares me. Reading it puts me face-to-face with my incipient Math skills, and the thought of overcoming them brings about the fear of not going through any transformations, to still be beneath the nice and impressive people I follow on Twitter and star on GitHub. Looming doom is baked into my personality, and maturity hasn&rsquo;t made me get <em>Goals</em> or appreciate what I&rsquo;ve accomplished.</p>
-
-<p>I&rsquo;m turning 30 in less than two months, and the failure is following me into a new decade. As weak as symbolic dates and its resolutions are as motivators, I really want to tick that box in the not-so-distant future. This blog will be a tale of a confused man walking through the land of Scheme, occasionally going off-topic, but always using the book as its main thread. I hope it&rsquo;s not too boring.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
-</div>
 <aside class="sidebar">
   
     <section>
@@ -1477,11 +1063,11 @@
       </li>
     
       <li class="post">
-        <a href="/blog/2014/01/12/reactive/">&#8220;Principles of Reactive Programming&#8221;, a Review</a>
+        <a href="/blog/2014/01/12/reactive/">"Principles of Reactive Programming", a Review</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2013/11/15/rework/">&#8220;REWORK&#8221;, by 37signals &mdash; &#9733;&#9733;&#9734;&#9734;&#9734;</a>
+        <a href="/blog/2013/11/15/rework/">"REWORK", by 37signals &mdash; &#9733;&#9733;&#9734;&#9734;&#9734;</a>
       </li>
     
   </ul>
@@ -1490,7 +1076,7 @@
 <section>
   <h1>GitHub Repos</h1>
   <ul id="gh_repos">
-    <li class="loading">Status updating&#8230;</li>
+    <li class="loading">Status updating...</li>
   </ul>
   
   <a href="https://github.com/dodecaphonic">@dodecaphonic</a> on GitHub
@@ -1531,6 +1117,7 @@
 
   
 </aside>
+
 
     </div>
   </div>

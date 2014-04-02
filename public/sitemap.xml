@@ -33,15 +33,19 @@
         <lastmod>2014-03-21T16:37:15-03:00</lastmod>
     </url>
     <url>
-        <loc>http://troikatech.com/blog/archives/</loc>
-        <lastmod>2014-03-21T16:37:15-03:00</lastmod>
-    </url>
-    <url>
-        <loc>http://troikatech.com/</loc>
-        <lastmod>2014-03-21T16:37:15-03:00</lastmod>
+        <loc>http://troikatech.com/blog/2014/04/02/property-based-testing-in-ruby/</loc>
+        <lastmod>2014-04-02T10:43:35-03:00</lastmod>
     </url>
     <url>
         <loc>http://troikatech.com/robots.txt</loc>
         <lastmod>2013-08-14T20:58:26-03:00</lastmod>
+    </url>
+    <url>
+        <loc>http://troikatech.com/blog/archives/</loc>
+        <lastmod>2014-04-02T10:43:35-03:00</lastmod>
+    </url>
+    <url>
+        <loc>http://troikatech.com/</loc>
+        <lastmod>2014-04-02T10:43:35-03:00</lastmod>
     </url>
 </urlset>
