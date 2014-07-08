@@ -3,7 +3,7 @@ layout: post
 title: "(PT-BR) Palestra sobre Celluloid no RubyOnRio"
 date: 2014-03-21 16:10
 comments: true
-categories: ruby celluloid actors akka erlang
+categories: [ruby, celluloid, actors, akka, erlang]
 ---
 
 No dia 15 de março de 2014, aproveitei o encontro do [RubyOnRio][rubyonrio] para falar sobre [Celluloid][celluloid], uma implementação do Actor Model para Ruby. Como programação reativa, concorrência, paralelismo e quetais têm ocupado minha mente nos últimos meses, achei por bem conversar com o pessoal sobre como isso é relevante para o futuro do desenvolvimento de software e para o Ruby em si, constantemente sob ameaça (se Hacker News for parâmetro) de ser soterrado por uma tecnologia mais antenada com os novos tempos.

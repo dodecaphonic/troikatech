@@ -3,7 +3,7 @@ layout: post
 title: "Property-based testing in Ruby"
 date: 2014-04-02 10:32
 comments: true
-categories: ruby fp quickcheck testing haskell scala
+categories: [ruby, fp, quickcheck, testing, haskell, scala]
 ---
 For the past year or so I have slowly been dipping my feet into the vast functional programming seas. From taking the awesome [Coursera][coursera] [offerings][fpcoursera] [from Typesafe][reactivecoursera] to slowly working through Rúnar Bjarnason's and Paul Chiusano's _[Functional Programming in Scala][fpinscala]_, my mind has been expanding proportionally to the time I dedicate to learning its ways. It has been incredibly rewarding and humbling.
 
