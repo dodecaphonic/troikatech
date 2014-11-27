@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: emacs | Troika Tech]]></title>
+  <link href="http://troikatech.com/blog/categories/emacs/atom.xml" rel="self"/>
+  <link href="http://troikatech.com/"/>
+  <updated>2014-11-27T11:38:11-02:00</updated>
+  <id>http://troikatech.com/</id>
+  <author>
+    <name><![CDATA[Vitor Capela]]></name>
+    <email><![CDATA[dodecaphonic@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[ENSIME and Emacs as a Scala IDE]]></title>
+    <link href="http://troikatech.com/blog/2014/11/26/ensime-and-emacs-as-a-scala-ide/"/>
+    <updated>2014-11-26T10:38:00-02:00</updated>
+    <id>http://troikatech.com/blog/2014/11/26/ensime-and-emacs-as-a-scala-ide</id>
+    <content type="html"><![CDATA[<p><em>&ldquo;Maybe Emacs is not enough.&rdquo;</em></p>
+
+<p>That popped up in my mind, and it scared me. I knew Scala was a different beast; I knew there was probably a lot I was missing out on by using my tried-and-true workflows; I knew that IntelliJ was supposed to be amazing. Still, thinking Emacs-the-almighty was not enough frightened me.</p>
+
+<p>When I started on this slow path towards learning FP, I had been using dynamic languages almost exclusively for almost 14 years, with a short stop in C++-land for a couple of them. I was used to a world of mostly ok tools centered on a REPL, and it was fine &mdash; programming is more thinking than typing and clicking, that whole <em>spiel</em>. But I had never really done anything in a good type system, and, frankly, it was time I knew how the rest of the world leveraged their tools in order to work more comfortably and effectively.</p>
+
+<p>With that in mind, I evaluated the Typesafe IDE and IntelliJ IDEA 12 and 13, finding a lot of good in both tools (and a few problems, some discussed in my post about the <a href="/blog/2014/01/12/reactive">Reactive Programming course</a>). Still, after a few good days with each option, I was tempted to just go back to Emacs and rely on my memory (and <a href="http://kapeli.com/dash">Dash</a>) for the API signatures, do all my code refactorings by hand and use the <code>sbt console</code> for quick explorations.</p>
+
+<p>Then I found out I could have the cake and eat it too.</p>
+
+<h2>Enter ENSIME</h2>
+
+<p>ENSIME (<strong>ENhanced Scala Interaction Mode for Emacs</strong>) is a project that gives Emacs IDE-like capabilities. It performs type and error-checking as you write code, provides symbol inspection, facilities for browsing your codebase and performing automated refactorings. It accomplishes all that using the <a href="http://scala-ide.org/docs/dev/architecture/presentation-compiler.html">Scala Presentation Compiler</a>, a lightweight version of the infrastructure that goes only as far as needed to resolve types, find errors and do semantic highlighting.</p>
+
+<p>Setting it up is super simple. Using MELPA, install the <code>ensime</code> package. Then add the following to your Emacs config:</p>
+
+<p><code>
+(require 'ensime)
+(add-hook 'scala-mode-hook 'ensime-scala-mode-hook)
+</code></p>
+
+<p>Then add the plugin to your global <code>sbt</code> config (e.g. <code>~/.sbt/0.13/plugins/plugins.sbt</code>):</p>
+
+<p>``` scala
+resolvers += Resolver.sonatypeRepo(&ldquo;snapshots&rdquo;)</p>
+
+<p>addSbtPlugin(&ldquo;org.ensime&rdquo; % &ldquo;ensime-sbt&rdquo; % &ldquo;0.1.5-SNAPSHOT&rdquo;)
+```</p>
+
+<p>And then, in your project directory, run <code>sbt gen-ensime</code> (requires sbt >= 0.13.5). It will resolve the dependencies, install the ENSIME plugin and leave everything ready to go.</p>
+
+<p>Now, when you open a buffer, you&rsquo;re gonna see the following in your mode line:</p>
+
+<p><img class="<a" src="href="https://dl.dropboxusercontent.com/s/zss0kz5lr8hvhmr/2014-11-27%20at%2010.22.png">https://dl.dropboxusercontent.com/s/zss0kz5lr8hvhmr/2014-11-27%20at%2010.22.png</a>" title="ENSIME Disconnected" ></p>
+
+<p>Use <code>M-x ensime</code> to start a connection. It might take a few seconds for it to do what it must to analyze your project, but you&rsquo;ll eventually see the mode line change to show it&rsquo;s ready to work.</p>
+
+<h2>Code completion</h2>
+
+<p>One of the cool things ENSIME provides is real code completion, based on the type you&rsquo;re dealing with. Instead of the usual <code>M-/</code> cycling, you can explore an API by looking at the method signatures and documentation. Here&rsquo;s the thing in action:</p>
+
+<p><img class="<a" src="href="https://s3.amazonaws.com/troikatech/ensime_as_ide/completion.gif">https://s3.amazonaws.com/troikatech/ensime_as_ide/completion.gif</a>" title="Completing" ></p>
+
+<h2>Type inspection</h2>
+
+<p>Sometimes Scala&rsquo;s type inference engine gets confused, giving you something too broad or too narrow for your needs; other times, you just want to know the type of a <code>val</code>. Worry not: ENSIME can tell you what has been inferenced just by putting the cursor over the token you want and pressing <code>C-c C-v i</code> (works a bit like <code>:t</code> in <code>ghci</code>).</p>
+
+<p><img class="<a" src="href="https://s3.amazonaws.com/troikatech/ensime_as_ide/type_at_point.gif">https://s3.amazonaws.com/troikatech/ensime_as_ide/type_at_point.gif</a>" title="Inspecting types" ></p>
+
+<p>You can also show uses of a symbol by pressing <code>C-c C-v r</code>.</p>
+
+<h2>Automated Refactorings</h2>
+
+<p>ENSIME offers six simple, but extremely useful automated refactorings:</p>
+
+<ul>
+<li>Inline Local</li>
+<li>Extract Local</li>
+<li>Extract Method</li>
+<li>Rename</li>
+<li>Organize Imports</li>
+<li>Import Type at Point</li>
+</ul>
+
+
+<p><img class="<a" src="href="https://s3.amazonaws.com/troikatech/ensime_as_ide/refactoring.gif">https://s3.amazonaws.com/troikatech/ensime_as_ide/refactoring.gif</a>" title="Refactoring" ></p>
+
+<p>Of all of these, <em>Import Type at Point</em> is the only one I&rsquo;d consider flaky. It resolves the type perfectly, but inserts the <code>import</code> statement inline. I don&rsquo;t know if that&rsquo;s configurable. Otherwise, it works as many other automated tools: finds each change, shows you the substitution, asks you to ok it.</p>
+
+<h2>Navigation</h2>
+
+<p>You can use <code>M-.</code> and <code>M-*</code>, normally associated with finding tags, to move inside your project.</p>
+
+<p><img class="<a" src="href="https://s3.amazonaws.com/troikatech/ensime_as_ide/navigation.gif">https://s3.amazonaws.com/troikatech/ensime_as_ide/navigation.gif</a>" title="Navigation" ></p>
+
+<p>You can also jump from implementation to test, and vice versa.</p>
+
+<h2><code>scala</code> and <code>sbt</code> integration</h2>
+
+<p>If you press <code>C-c C-v s</code>, an sbt console will be launched. A lot of my usual Ruby workflow of running specs from keybinds and jumping quickly to the REPL can be reproduced with this feature.</p>
+
+<p>For instance, when you want to run all tests, you press <code>C-c C-b T</code>. When you wish only to invoke <code>testQuick</code>, you use <code>C-c C-b t</code>.</p>
+
+<p>There&rsquo;s keybinds for changing a region or a buffer, too &mdash; useful both for playing with code and exercising your Emacs gymnastics.</p>
+
+<h2>Finally</h2>
+
+<p>ENSIME has been fun to work with. It allows me to focus on code and work comfortably with my (admittedly small) projects. It&rsquo;s a great showcase of Emacs capabilities, and has led a couple of hardcore vim-using friends to show admiration.</p>
+
+<p>If you&rsquo;re doing Scala and don&rsquo;t want to commit to an IDE, but wish to have more of a modern environment, please try ENSIME. I even hear there&rsquo;s vim and jEdit clients.</p>
+]]></content>
+  </entry>
+  
+</feed>
