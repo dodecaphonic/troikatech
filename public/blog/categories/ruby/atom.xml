@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ruby | Troika Tech]]></title>
   <link href="http://troikatech.com/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://troikatech.com/"/>
-  <updated>2015-04-28T23:06:52-03:00</updated>
+  <updated>2015-04-28T23:10:18-03:00</updated>
   <id>http://troikatech.com/</id>
   <author>
     <name><![CDATA[Vitor Capela]]></name>
@@ -22,7 +22,7 @@
 
 <p>Analyzing things more carefully, however, I&rsquo;ve realized how much it has allowed me to change as a coder. In Ruby, it&rsquo;s very easy to go from &ldquo;it&rsquo;s like this in language <em>x</em>&rdquo; to &ldquo;it&rsquo;s like this in Ruby, too.&rdquo; The <a href="http://en.wikipedia.org/wiki/Moli%C3%A8re">&ldquo;Belle marquise&rdquo;</a> quality of expression it allows is a source of many joys, and can be quite invigorating as the relationship between it and the programmer develops.</p>
 
-<p>We often feel pressured, in our field, to jump from thing to thing, from shiny to shiny, from silver bullet to silver bullet. &ldquo;The best tool for the job cannot possibly be the tool you had five years ago&rdquo; &mdash; chants the crowd as it tries a new JavaScript build system &mdash; &ldquo;it just isn&rsquo;t right.&rdquo; Reflecting on the role Ruby has had in my life, though, shines light on an aspect we rarely explore: a programming language is a friend. It&rsquo;s not perfect, it can annoy you, but it&rsquo;s there, and by merely being there and helping you think it makes you better.</p>
+<p>We often feel pressured, in our field, to jump from thing to thing, from shiny to shiny, from silver bullet to silver bullet. &ldquo;The best tool for the job cannot possibly be the tool you had five years ago&rdquo; &mdash; chants the crowd as they try a new JavaScript build system &mdash; &ldquo;it just isn&rsquo;t right.&rdquo; Reflecting on the role Ruby has had in my life, though, shines light on an aspect we rarely explore: a programming language is a friend. It&rsquo;s not perfect, it can annoy you, but it&rsquo;s there, and by merely being there and helping you think it makes you better.</p>
 
 <p>Ruby is a <em>great</em> friend. We&rsquo;ve been together for almost ten years. I can only hope I&rsquo;ve been making it better too.</p>
 ]]></content>
