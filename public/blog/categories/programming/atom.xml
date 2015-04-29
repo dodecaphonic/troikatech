@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: programming | Troika Tech]]></title>
+  <link href="http://troikatech.com/blog/categories/programming/atom.xml" rel="self"/>
+  <link href="http://troikatech.com/"/>
+  <updated>2015-04-28T23:06:52-03:00</updated>
+  <id>http://troikatech.com/</id>
+  <author>
+    <name><![CDATA[Vitor Capela]]></name>
+    <email><![CDATA[dodecaphonic@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby is a friend]]></title>
+    <link href="http://troikatech.com/blog/2015/04/28/ruby-is-a-friend/"/>
+    <updated>2015-04-28T22:45:00-03:00</updated>
+    <id>http://troikatech.com/blog/2015/04/28/ruby-is-a-friend</id>
+    <content type="html"><![CDATA[<p>As time goes by, Ruby moves closer and closer to the &ldquo;boring tech&rdquo; bin: it&rsquo;s tried, true and trite (at least by <a href="http://news.ycombinator.com">Hacker News</a> standards). And to be completely honest, I&rsquo;ve often been taken by that same sentiment. The awareness of the privilege to be working with something that remains foreign to most of the Brazilian market has been replaced by a feeling of &ldquo;not cool enough&rdquo;, an anxiety for something as wonderful to happen again.</p>
+
+<p>Analyzing things more carefully, however, I&rsquo;ve realized how much it has allowed me to change as a coder. In Ruby, it&rsquo;s very easy to go from &ldquo;it&rsquo;s like this in language <em>x</em>&rdquo; to &ldquo;it&rsquo;s like this in Ruby, too.&rdquo; The <a href="http://en.wikipedia.org/wiki/Moli%C3%A8re">&ldquo;Belle marquise&rdquo;</a> quality of expression it allows is a source of many joys, and can be quite invigorating as the relationship between it and the programmer develops.</p>
+
+<p>We often feel pressured, in our field, to jump from thing to thing, from shiny to shiny, from silver bullet to silver bullet. &ldquo;The best tool for the job cannot possibly be the tool you had five years ago&rdquo; &mdash; chants the crowd as it tries a new JavaScript build system &mdash; &ldquo;it just isn&rsquo;t right.&rdquo; Reflecting on the role Ruby has had in my life, though, shines light on an aspect we rarely explore: a programming language is a friend. It&rsquo;s not perfect, it can annoy you, but it&rsquo;s there, and by merely being there and helping you think it makes you better.</p>
+
+<p>Ruby is a <em>great</em> friend. We&rsquo;ve been together for almost ten years. I can only hope I&rsquo;ve been making it better too.</p>
+]]></content>
+  </entry>
+  
+</feed>
