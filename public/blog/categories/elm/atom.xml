@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: elm | Troika Tech]]></title>
+  <link href="http://troikatech.com/blog/categories/elm/atom.xml" rel="self"/>
+  <link href="http://troikatech.com/"/>
+  <updated>2015-08-18T14:19:05-03:00</updated>
+  <id>http://troikatech.com/</id>
+  <author>
+    <name><![CDATA[Vitor Capela]]></name>
+    <email><![CDATA[dodecaphonic@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Decoding larger JSON objects in Elm 0.15]]></title>
+    <link href="http://troikatech.com/blog/2015/08/17/decoding-larger-json-objects-in-elm/"/>
+    <updated>2015-08-17T22:31:00-03:00</updated>
+    <id>http://troikatech.com/blog/2015/08/17/decoding-larger-json-objects-in-elm</id>
+    <content type="html"><![CDATA[<p><a href="http://elm-lang.org/">Elm</a> is pretty cool. It&rsquo;s a functional programming language with a <a href="https://www.youtube.com/watch?v=oYk8CKH7OhE">focus on usability</a>, strongly-typed but unceremonious, with nice type inferencing, good documentation and great stewardship from its creator, <a href="http://evan.czaplicki.us/">Evan Czaplicki</a>.</p>
+
+<p>It&rsquo;s so cool I&rsquo;ve given an excited talk about it at work after only a couple of weeks of fiddling with it. And whenever I speak about tech, I try to add a demo or two to tie things together and make points clearer. That led to <a href="https://github.com/dodecaphonic/elm-forecast">elm-forecast</a>, a tiny app showing how to call APIs, decode JSON and display things on the screen.</p>
+
+<p><img src="https://s3.amazonaws.com/troikatech/elm_json/elm-forecast.gif" alt="What elm-forecast looks like" /></p>
+
+<h2>The problem</h2>
+
+<p><a href="https://developer.forecast.io/">Dark Sky&rsquo;s JSON API</a> offers detailed weather information for most of the world. It has up-to-the minute data for some locations, and powers a lot of nice weather apps, like <a href="http://forecast.io">forecast.io</a> and <a href="https://play.google.com/store/apps/details?id=com.samruston.weather&amp;hl=en">Weather Timeline</a>. My app was also going to be nice, so I picked it as my data source.</p>
+
+<p>I started by wrapping the current forecast definition as a <a href="http://elm-lang.org/docs/records">record</a>:</p>
+
+<p>```haskell
+type alias Forecast = { time : Int</p>
+
+<pre><code>                  , summary : String
+                  , icon : String
+                  , precipIntensity : Float
+                  , precipProbability : Float
+                  , temperature : Float
+                  , windSpeed : Float
+                  , windBearing : Float
+                  , humidity : Float
+                  , visibility : Float
+                  , cloudCover : Float
+                  , pressure : Float
+                  , ozone : Float
+                  }
+</code></pre>
+
+<p>```</p>
+
+<p>Record types marry a lot of the feel of JavaScript objects with static types (the things after the colons).</p>
+
+<p>If you&rsquo;re familiar with dynamic languages, the next step will seem alien: instead of just calling something like <code>JSON.parse(obj)</code> and referencing its fields, we have to tell Elm how to make a typed <code>Forecast</code> out of the serialized data.</p>
+
+<p>Let&rsquo;s see what it looks like with a smaller object:</p>
+
+<p>```haskell
+$ elm repl
+Elm REPL 0.4.2 (Elm Platform 0.15.1)
+  See usage examples at <a href="https://github.com/elm-lang/elm-repl">https://github.com/elm-lang/elm-repl</a>
+  Type :help for help, :exit to exit</p>
+
+<blockquote><p>import Json.Decode as Json exposing ((:=))
+type alias Point = { x: Float, y: Float }
+serialized = &ldquo;{\"x\&rdquo;: -43.123, \&ldquo;y\&rdquo;: -22.321}&ldquo;
+&rdquo;{\&ldquo;x\&rdquo;: -43.123, \&ldquo;y\&rdquo;: -22.321}&ldquo; : String
+pointDecoder = Json.object2 \
+|   Point \
+|   ("x&rdquo; := Json.float) \
+|   (&ldquo;y&rdquo; := Json.float)
+<function> : Json.Decode.Decoder Repl.Point
+Json.decodeString pointDecoder serialized
+Ok { x = -43.123, y = -22.321 } : Result.Result String Repl.Point
+```</p></blockquote>
+
+<p>The code above defines a type <code>Point</code> and a <code>Json.Decode.Decoder</code> <code>pointDecoder</code>, which takes care of deserializing an object with two fields (<code>object2</code>) and returning a <code>Point</code>. As you can see, no types have been declared, yet Elm has inferred every single one of them.</p>
+
+<p><code>Json.Decode</code> has functions from <code>object1</code> to <code>object8</code>, capable of building objects with one up to eight fields. What to do with <code>Forecast</code>, that has <strong>13</strong>? <em>&ldquo;Throw away five things, it&rsquo;s just an example app you&rsquo;re building to learn Elm&rdquo;</em>, thought the lazy author. Luckily, thirst for knowledge (and a little guilt) averted that course, and I relied on what little function programming I know to <em>almost</em> get there using <a href="http://package.elm-lang.org/packages/elm-lang/core/1.0.0/Json-Decode#andThen"><code>Json.Decoder.andThen</code></a>. Since <em>almost</em> is actually <em>not quite</em>, to Google I went. <a href="https://groups.google.com/forum/m/#!topic/elm-discuss/2LxEUVe0UBo">A thread with a recipe from mr. Czaplicki himself</a> offered the following solution:</p>
+
+<p>```haskell
+import Json.Decode as Json</p>
+
+<p>apply : Json.Decoder (a &ndash;> b) &ndash;> Json.Decoder a &ndash;> Json.Decoder b
+apply func value =</p>
+
+<pre><code>Json.object2 (&lt;|) func value
+</code></pre>
+
+<p>```</p>
+
+<p>Let&rsquo;s see it in action:</p>
+
+<p>```haskell</p>
+
+<blockquote><p>newPointDecoder = Json.map Point (&ldquo;x&rdquo; := Json.float) <code>apply</code> (&ldquo;y&rdquo; := Json.float)
+<function> : Json.Decode.Decoder Repl.Point
+Json.decodeString newPointDecoder serialized
+Ok { x = -43.123, y = -22.321 } : Result.Result String Repl.Point
+```</p></blockquote>
+
+<p>With <code>apply</code>, you can chain as many decoders as you like and build <code>objectN</code>. But how does it work?</p>
+
+<h2>A detour to the world of Partial Application</h2>
+
+<p>In Elm, like in Haskell, every function is <em>curried</em>. What it means, in practice, is that every function takes a single argument and returns a value, which can in turn be another function, taking a single argument, returning a value, and so forth. I&rsquo;ll define a function <code>add</code> that (oh, how impressive) adds two numbers:</p>
+
+<p>```haskell</p>
+
+<blockquote><p>add x y = x + y
+<function> : number &ndash;> number &ndash;> number
+add 2 3
+5 : number
+```</p></blockquote>
+
+<p>It looks like a function call with two arguments, like you see in most other languages. But look at the type signature the compiler inferred: <code>add : number -&gt; number -&gt; number</code>. What do the arrows represent? Well, they tell you exactly that the paragraph above tries to explain. Let&rsquo;s see:</p>
+
+<p>```haskell</p>
+
+<blockquote><p>add2 = add 2
+<function> : number &ndash;> number
+add2 3
+5 : number
+```</p></blockquote>
+
+<p>When defining <code>add2</code>, I&rsquo;ve <em>partially</em> applied <code>add</code> with <code>2</code>, getting another function (now from <code>number -&gt; number</code>). Calling that function will then result in a final number, the <code>5</code> literal that amazes people all over the world. This very characteristic helps you build <code>apply</code>.</p>
+
+<p>In the example a few paragraphs above, <code>Point</code> is a function with the signature <code>Float -&gt; Float -&gt; Point</code>. That means that if I try to use it with a single decoder, it will move closer to getting an actual <code>Point</code>, but not get there yet:</p>
+
+<p>```haskell</p>
+
+<blockquote><p>Json.map Point (&ldquo;x&rdquo; := Json.float)
+<function> : Json.Decode.Decoder (Float &ndash;> Repl.Point)
+```</p></blockquote>
+
+<p>Looking at the type signature, it&rsquo;s structure that decodes a <code>Float</code> and returns another structure that can decode a function <code>Float -&gt; Point</code>. If I tried to do the same thing with a type constructor that took more arguments, say <code>Float -&gt; String -&gt; Bool -&gt; String -&gt; Value</code>, the first step would yield a Decoder with type <code>(String -&gt; Bool -&gt; String -&gt; Value)</code> &mdash; solved for the first parameter, still waiting for a resolution for the next three.</p>
+
+<p>What <code>apply</code> does then is leverage the fact that you can progressively get to your final value by applying function by function, taking care of spitting out every every step as a <code>Json.Decoder</code>. There&rsquo;s a name for this pattern of having a function in a box and applying it to values in other boxes: it&rsquo;s an <a href="https://wiki.haskell.org/Typeclassopedia#Applicative">Applicative functor</a>). If you&rsquo;ve read a bit about the language, you know that Elm shies away from the burden of a Math-y, Haskell-y lexicon. The great thing is that by hiding the words but showing things in practice, you end up building an intuition for how the concepts can be <em>useful</em>.</p>
+
+<p>Let&rsquo;s go back to <code>Json.object2</code>. It expects <code>(a -&gt; b -&gt; c) -&gt; Decoder a -&gt; Decoder b -&gt; Decoder c</code> &mdash; a function from type <code>a</code> to <code>b</code> to <code>c</code> and <code>Decoder</code>s for <code>a</code> and <code>b</code>, yielding a <code>Decoder c</code>. In our definition <code>pointDecoder</code> in the beginning of this post, we matched that to a tee, as <code>Point</code> can be seen as a function taking two <code>Floats</code> (<code>a</code> and <code>b</code>) and returning a <code>Point</code> record (<code>c</code>). But <code>a</code>, <code>b</code> or <code>c</code> can also be a function! In fact, that&rsquo;s exactly what we&rsquo;ve seen above with <code>Json.Decode.Decoder (Float -&gt; Repl.Point)</code>. Thus, when we say:</p>
+
+<p>```haskell</p>
+
+<blockquote><p>Json.object2 (&lt;|) func value
+```</p></blockquote>
+
+<p>and replace <code>func</code> with <code>Json.Decoder.Decode (Float -&gt; Point)</code> and <code>value</code> with <code>("y" := Json.float)</code>, we&rsquo;ll end up with a <code>Decoder</code> built of applying what&rsquo;s coming out of <code>value</code> to <code>Float -&gt; Point</code>, arriving at <code>Decoder Point</code>. If we manually try to build the same chain, it looks like this:</p>
+
+<p>```haskell</p>
+
+<blockquote><p>import Json.Decode as Json exposing ((:=), andThen)
+type alias Point = { x: Float, y: Float }
+partialDecoder = Json.succeed(Point) <code>andThen</code> \</p>
+
+<pre><code>(\f -&gt; ("x" := Json.float) `andThen` \
+(\x -&gt; Json.succeed &lt;| f x))
+</code></pre>
+
+<p><function> : Json.Decode.Decoder (Float &ndash;> Repl.Point)
+decoderPoint = partialDecoder <code>andThen</code> \</p>
+
+<pre><code>(\f -&gt; ("y" := Json.float) `andThen` \
+(\y -&gt; Json.succeed &lt;| f y))
+</code></pre>
+
+<p><function> : Json.Decode.Decoder Repl.Point
+```</p></blockquote>
+
+<p>Cool, right? Now that you and I understand the technique, we can go back to the gif above and marvel at how poor my CSS skills are.</p>
+
+<h2>No magic</h2>
+
+<p>What I find the most refreshing as I dive into functional programming is that there&rsquo;s (usually) no magic. If you start peeling the layers, there&rsquo;s just functions brought together to perform amazing things. <code>apply</code> here is exactly that: the power of a few functions allowing you to convert arbitrarily large structures into a nice type Elm can understand. In a world of &ldquo;factory this&rdquo; &ldquo;IoC container that&rdquo;, you can&rsquo;t help but smile. And it REALLY REALLY REALLY improves your programming everywhere: I&rsquo;m a fan of saying my Ruby is much better and more maintainable after I decided to learn the functional ways because it&rsquo;s true. Hopefully you can find the same joy.</p>
+]]></content>
+  </entry>
+  
+</feed>

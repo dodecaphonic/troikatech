@@ -1,0 +1,460 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Decoding larger JSON objects in Elm 0.15 - Troika Tech</title>
+  <meta name="author" content="Vitor Capela">
+
+  
+  <meta name="description" content="Elm is pretty cool. It&rsquo;s a functional programming language with a focus on usability, strongly-typed but unceremonious, with nice type &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://troikatech.com/blog/2015/08/17/decoding-larger-json-objects-in-elm">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Troika Tech" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="//use.typekit.net/ksw3xzi.js"></script>
+<script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-47043795-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Troika Tech</a></h1>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:troikatech.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Decoding Larger JSON Objects in Elm 0.15</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-17T22:31:00-03:00" pubdate data-updated="true">Aug 17<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><a href="http://elm-lang.org/">Elm</a> is pretty cool. It&rsquo;s a functional programming language with a <a href="https://www.youtube.com/watch?v=oYk8CKH7OhE">focus on usability</a>, strongly-typed but unceremonious, with nice type inferencing, good documentation and great stewardship from its creator, <a href="http://evan.czaplicki.us/">Evan Czaplicki</a>.</p>
+
+<p>It&rsquo;s so cool I&rsquo;ve given an excited talk about it at work after only a couple of weeks of fiddling with it. And whenever I speak about tech, I try to add a demo or two to tie things together and make points clearer. That led to <a href="https://github.com/dodecaphonic/elm-forecast">elm-forecast</a>, a tiny app showing how to call APIs, decode JSON and display things on the screen.</p>
+
+<p><img src="https://s3.amazonaws.com/troikatech/elm_json/elm-forecast.gif" alt="What elm-forecast looks like" /></p>
+
+<h2>The problem</h2>
+
+<p><a href="https://developer.forecast.io/">Dark Sky&rsquo;s JSON API</a> offers detailed weather information for most of the world. It has up-to-the minute data for some locations, and powers a lot of nice weather apps, like <a href="http://forecast.io">forecast.io</a> and <a href="https://play.google.com/store/apps/details?id=com.samruston.weather&amp;hl=en">Weather Timeline</a>. My app was also going to be nice, so I picked it as my data source.</p>
+
+<p>I started by wrapping the current forecast definition as a <a href="http://elm-lang.org/docs/records">record</a>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="kr">type</span> <span class="n">alias</span> <span class="kt">Forecast</span> <span class="ow">=</span> <span class="p">{</span> <span class="n">time</span> <span class="kt">:</span> <span class="kt">Int</span>
+</span><span class='line'>                      <span class="p">,</span> <span class="n">summary</span> <span class="kt">:</span> <span class="kt">String</span>
+</span><span class='line'>                      <span class="p">,</span> <span class="n">icon</span> <span class="kt">:</span> <span class="kt">String</span>
+</span><span class='line'>                      <span class="p">,</span> <span class="n">precipIntensity</span> <span class="kt">:</span> <span class="kt">Float</span>
+</span><span class='line'>                      <span class="p">,</span> <span class="n">precipProbability</span> <span class="kt">:</span> <span class="kt">Float</span>
+</span><span class='line'>                      <span class="p">,</span> <span class="n">temperature</span> <span class="kt">:</span> <span class="kt">Float</span>
+</span><span class='line'>                      <span class="p">,</span> <span class="n">windSpeed</span> <span class="kt">:</span> <span class="kt">Float</span>
+</span><span class='line'>                      <span class="p">,</span> <span class="n">windBearing</span> <span class="kt">:</span> <span class="kt">Float</span>
+</span><span class='line'>                      <span class="p">,</span> <span class="n">humidity</span> <span class="kt">:</span> <span class="kt">Float</span>
+</span><span class='line'>                      <span class="p">,</span> <span class="n">visibility</span> <span class="kt">:</span> <span class="kt">Float</span>
+</span><span class='line'>                      <span class="p">,</span> <span class="n">cloudCover</span> <span class="kt">:</span> <span class="kt">Float</span>
+</span><span class='line'>                      <span class="p">,</span> <span class="n">pressure</span> <span class="kt">:</span> <span class="kt">Float</span>
+</span><span class='line'>                      <span class="p">,</span> <span class="n">ozone</span> <span class="kt">:</span> <span class="kt">Float</span>
+</span><span class='line'>                      <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Record types marry a lot of the feel of JavaScript objects with static types (the things after the colons).</p>
+
+<p>If you&rsquo;re familiar with dynamic languages, the next step will seem alien: instead of just calling something like <code>JSON.parse(obj)</code> and referencing its fields, we have to tell Elm how to make a typed <code>Forecast</code> out of the serialized data.</p>
+
+<p>Let&rsquo;s see what it looks like with a smaller object:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="o">$</span> <span class="n">elm</span> <span class="n">repl</span>
+</span><span class='line'><span class="kt">Elm</span> <span class="kt">REPL</span> <span class="mf">0.4</span><span class="o">.</span><span class="mi">2</span> <span class="p">(</span><span class="kt">Elm</span> <span class="kt">Platform</span> <span class="mf">0.15</span><span class="o">.</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="kt">See</span> <span class="n">usage</span> <span class="n">examples</span> <span class="n">at</span> <span class="o">&lt;</span><span class="n">https</span><span class="kt">://</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">elm</span><span class="o">-</span><span class="n">lang</span><span class="o">/</span><span class="n">elm</span><span class="o">-</span><span class="n">repl</span><span class="o">&gt;</span>
+</span><span class='line'>  <span class="kt">Type</span> <span class="kt">:</span><span class="n">help</span> <span class="n">for</span> <span class="n">help</span><span class="p">,</span> <span class="kt">:</span><span class="n">exit</span> <span class="n">to</span> <span class="n">exit</span>
+</span><span class='line'><span class="o">&gt;</span> <span class="kr">import</span> <span class="nn">Json.Decode</span> <span class="k">as</span> <span class="n">Json</span> <span class="n">exposing</span> <span class="p">((</span><span class="kt">:=</span><span class="p">))</span>
+</span><span class='line'><span class="o">&gt;</span> <span class="kr">type</span> <span class="n">alias</span> <span class="kt">Point</span> <span class="ow">=</span> <span class="p">{</span> <span class="n">x</span><span class="kt">:</span> <span class="kt">Float</span><span class="p">,</span> <span class="n">y</span><span class="kt">:</span> <span class="kt">Float</span> <span class="p">}</span>
+</span><span class='line'><span class="o">&gt;</span> <span class="n">serialized</span> <span class="ow">=</span> <span class="s">&quot;{</span><span class="se">\&quot;</span><span class="s">x</span><span class="se">\&quot;</span><span class="s">: -43.123, </span><span class="se">\&quot;</span><span class="s">y</span><span class="se">\&quot;</span><span class="s">: -22.321}&quot;</span>
+</span><span class='line'><span class="s">&quot;{</span><span class="se">\&quot;</span><span class="s">x</span><span class="se">\&quot;</span><span class="s">: -43.123, </span><span class="se">\&quot;</span><span class="s">y</span><span class="se">\&quot;</span><span class="s">: -22.321}&quot;</span> <span class="kt">:</span> <span class="kt">String</span>
+</span><span class='line'><span class="o">&gt;</span> <span class="n">pointDecoder</span> <span class="ow">=</span> <span class="kt">Json</span><span class="o">.</span><span class="n">object2</span> <span class="nf">\</span>
+</span><span class='line'><span class="o">|</span>   <span class="kt">Point</span> <span class="nf">\</span>
+</span><span class='line'><span class="o">|</span>   <span class="p">(</span><span class="s">&quot;x&quot;</span> <span class="kt">:=</span> <span class="kt">Json</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="nf">\</span>
+</span><span class='line'><span class="o">|</span>   <span class="p">(</span><span class="s">&quot;y&quot;</span> <span class="kt">:=</span> <span class="kt">Json</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span><span class="o">&gt;</span> <span class="kt">:</span> <span class="kt">Json</span><span class="o">.</span><span class="kt">Decode</span><span class="o">.</span><span class="kt">Decoder</span> <span class="kt">Repl</span><span class="o">.</span><span class="kt">Point</span>
+</span><span class='line'><span class="o">&gt;</span> <span class="kt">Json</span><span class="o">.</span><span class="n">decodeString</span> <span class="n">pointDecoder</span> <span class="n">serialized</span>
+</span><span class='line'><span class="kt">Ok</span> <span class="p">{</span> <span class="n">x</span> <span class="ow">=</span> <span class="o">-</span><span class="mf">43.123</span><span class="p">,</span> <span class="n">y</span> <span class="ow">=</span> <span class="o">-</span><span class="mf">22.321</span> <span class="p">}</span> <span class="kt">:</span> <span class="kt">Result</span><span class="o">.</span><span class="kt">Result</span> <span class="kt">String</span> <span class="kt">Repl</span><span class="o">.</span><span class="kt">Point</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The code above defines a type <code>Point</code> and a <code>Json.Decode.Decoder</code> <code>pointDecoder</code>, which takes care of deserializing an object with two fields (<code>object2</code>) and returning a <code>Point</code>. As you can see, no types have been declared, yet Elm has inferred every single one of them.</p>
+
+<p><code>Json.Decode</code> has functions from <code>object1</code> to <code>object8</code>, capable of building objects with one up to eight fields. What to do with <code>Forecast</code>, that has <strong>13</strong>? <em>&ldquo;Throw away five things, it&rsquo;s just an example app you&rsquo;re building to learn Elm&rdquo;</em>, thought the lazy author. Luckily, thirst for knowledge (and a little guilt) averted that course, and I relied on what little function programming I know to <em>almost</em> get there using <a href="http://package.elm-lang.org/packages/elm-lang/core/1.0.0/Json-Decode#andThen"><code>Json.Decoder.andThen</code></a>. Since <em>almost</em> is actually <em>not quite</em>, to Google I went. <a href="https://groups.google.com/forum/m/#!topic/elm-discuss/2LxEUVe0UBo">A thread with a recipe from mr. Czaplicki himself</a> offered the following solution:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="kr">import</span> <span class="nn">Json.Decode</span> <span class="k">as</span> <span class="n">Json</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">apply</span> <span class="kt">:</span> <span class="kt">Json</span><span class="o">.</span><span class="kt">Decoder</span> <span class="p">(</span><span class="n">a</span> <span class="ow">-&gt;</span> <span class="n">b</span><span class="p">)</span> <span class="ow">-&gt;</span> <span class="kt">Json</span><span class="o">.</span><span class="kt">Decoder</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="kt">Json</span><span class="o">.</span><span class="kt">Decoder</span> <span class="n">b</span>
+</span><span class='line'><span class="nf">apply</span> <span class="n">func</span> <span class="n">value</span> <span class="ow">=</span>
+</span><span class='line'>    <span class="kt">Json</span><span class="o">.</span><span class="n">object2</span> <span class="p">(</span><span class="o">&lt;|</span><span class="p">)</span> <span class="n">func</span> <span class="n">value</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s see it in action:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="o">&gt;</span> <span class="n">newPointDecoder</span> <span class="ow">=</span> <span class="kt">Json</span><span class="o">.</span><span class="n">map</span> <span class="kt">Point</span> <span class="p">(</span><span class="s">&quot;x&quot;</span> <span class="kt">:=</span> <span class="kt">Json</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="p">`</span><span class="n">apply</span><span class="p">`</span> <span class="p">(</span><span class="s">&quot;y&quot;</span> <span class="kt">:=</span> <span class="kt">Json</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span><span class="o">&gt;</span> <span class="kt">:</span> <span class="kt">Json</span><span class="o">.</span><span class="kt">Decode</span><span class="o">.</span><span class="kt">Decoder</span> <span class="kt">Repl</span><span class="o">.</span><span class="kt">Point</span>
+</span><span class='line'><span class="o">&gt;</span> <span class="kt">Json</span><span class="o">.</span><span class="n">decodeString</span> <span class="n">newPointDecoder</span> <span class="n">serialized</span>
+</span><span class='line'><span class="kt">Ok</span> <span class="p">{</span> <span class="n">x</span> <span class="ow">=</span> <span class="o">-</span><span class="mf">43.123</span><span class="p">,</span> <span class="n">y</span> <span class="ow">=</span> <span class="o">-</span><span class="mf">22.321</span> <span class="p">}</span> <span class="kt">:</span> <span class="kt">Result</span><span class="o">.</span><span class="kt">Result</span> <span class="kt">String</span> <span class="kt">Repl</span><span class="o">.</span><span class="kt">Point</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With <code>apply</code>, you can chain as many decoders as you like and build <code>objectN</code>. But how does it work?</p>
+
+<h2>A detour to the world of Partial Application</h2>
+
+<p>In Elm, like in Haskell, every function is <em>curried</em>. What it means, in practice, is that every function takes a single argument and returns a value, which can in turn be another function, taking a single argument, returning a value, and so forth. I&rsquo;ll define a function <code>add</code> that (oh, how impressive) adds two numbers:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="o">&gt;</span> <span class="n">add</span> <span class="n">x</span> <span class="n">y</span> <span class="ow">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span><span class="o">&gt;</span> <span class="kt">:</span> <span class="n">number</span> <span class="ow">-&gt;</span> <span class="n">number</span> <span class="ow">-&gt;</span> <span class="n">number</span>
+</span><span class='line'><span class="o">&gt;</span> <span class="n">add</span> <span class="mi">2</span> <span class="mi">3</span>
+</span><span class='line'><span class="mi">5</span> <span class="kt">:</span> <span class="n">number</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It looks like a function call with two arguments, like you see in most other languages. But look at the type signature the compiler inferred: <code>add : number -&gt; number -&gt; number</code>. What do the arrows represent? Well, they tell you exactly that the paragraph above tries to explain. Let&rsquo;s see:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="o">&gt;</span> <span class="n">add2</span> <span class="ow">=</span> <span class="n">add</span> <span class="mi">2</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span><span class="o">&gt;</span> <span class="kt">:</span> <span class="n">number</span> <span class="ow">-&gt;</span> <span class="n">number</span>
+</span><span class='line'><span class="o">&gt;</span> <span class="n">add2</span> <span class="mi">3</span>
+</span><span class='line'><span class="mi">5</span> <span class="kt">:</span> <span class="n">number</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When defining <code>add2</code>, I&rsquo;ve <em>partially</em> applied <code>add</code> with <code>2</code>, getting another function (now from <code>number -&gt; number</code>). Calling that function will then result in a final number, the <code>5</code> literal that amazes people all over the world. This very characteristic helps you build <code>apply</code>.</p>
+
+<p>In the example a few paragraphs above, <code>Point</code> is a function with the signature <code>Float -&gt; Float -&gt; Point</code>. That means that if I try to use it with a single decoder, it will move closer to getting an actual <code>Point</code>, but not get there yet:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="o">&gt;</span> <span class="kt">Json</span><span class="o">.</span><span class="n">map</span> <span class="kt">Point</span> <span class="p">(</span><span class="s">&quot;x&quot;</span> <span class="kt">:=</span> <span class="kt">Json</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span><span class="o">&gt;</span> <span class="kt">:</span> <span class="kt">Json</span><span class="o">.</span><span class="kt">Decode</span><span class="o">.</span><span class="kt">Decoder</span> <span class="p">(</span><span class="kt">Float</span> <span class="ow">-&gt;</span> <span class="kt">Repl</span><span class="o">.</span><span class="kt">Point</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Looking at the type signature, it&rsquo;s structure that decodes a <code>Float</code> and returns another structure that can decode a function <code>Float -&gt; Point</code>. If I tried to do the same thing with a type constructor that took more arguments, say <code>Float -&gt; String -&gt; Bool -&gt; String -&gt; Value</code>, the first step would yield a Decoder with type <code>(String -&gt; Bool -&gt; String -&gt; Value)</code> &mdash; solved for the first parameter, still waiting for a resolution for the next three.</p>
+
+<p>What <code>apply</code> does then is leverage the fact that you can progressively get to your final value by applying function by function, taking care of spitting out every every step as a <code>Json.Decoder</code>. There&rsquo;s a name for this pattern of having a function in a box and applying it to values in other boxes: it&rsquo;s an <a href="https://wiki.haskell.org/Typeclassopedia#Applicative">Applicative functor</a>). If you&rsquo;ve read a bit about the language, you know that Elm shies away from the burden of a Math-y, Haskell-y lexicon. The great thing is that by hiding the words but showing things in practice, you end up building an intuition for how the concepts can be <em>useful</em>.</p>
+
+<p>Let&rsquo;s go back to <code>Json.object2</code>. It expects <code>(a -&gt; b -&gt; c) -&gt; Decoder a -&gt; Decoder b -&gt; Decoder c</code> &mdash; a function from type <code>a</code> to <code>b</code> to <code>c</code> and <code>Decoder</code>s for <code>a</code> and <code>b</code>, yielding a <code>Decoder c</code>. In our definition <code>pointDecoder</code> in the beginning of this post, we matched that to a tee, as <code>Point</code> can be seen as a function taking two <code>Floats</code> (<code>a</code> and <code>b</code>) and returning a <code>Point</code> record (<code>c</code>). But <code>a</code>, <code>b</code> or <code>c</code> can also be a function! In fact, that&rsquo;s exactly what we&rsquo;ve seen above with <code>Json.Decode.Decoder (Float -&gt; Repl.Point)</code>. Thus, when we say:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="o">&gt;</span> <span class="kt">Json</span><span class="o">.</span><span class="n">object2</span> <span class="p">(</span><span class="o">&lt;|</span><span class="p">)</span> <span class="n">func</span> <span class="n">value</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>and replace <code>func</code> with <code>Json.Decoder.Decode (Float -&gt; Point)</code> and <code>value</code> with <code>("y" := Json.float)</code>, we&rsquo;ll end up with a <code>Decoder</code> built of applying what&rsquo;s coming out of <code>value</code> to <code>Float -&gt; Point</code>, arriving at <code>Decoder Point</code>. If we manually try to build the same chain, it looks like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="o">&gt;</span> <span class="kr">import</span> <span class="nn">Json.Decode</span> <span class="k">as</span> <span class="n">Json</span> <span class="n">exposing</span> <span class="p">((</span><span class="kt">:=</span><span class="p">),</span> <span class="n">andThen</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;</span> <span class="kr">type</span> <span class="n">alias</span> <span class="kt">Point</span> <span class="ow">=</span> <span class="p">{</span> <span class="n">x</span><span class="kt">:</span> <span class="kt">Float</span><span class="p">,</span> <span class="n">y</span><span class="kt">:</span> <span class="kt">Float</span> <span class="p">}</span>
+</span><span class='line'><span class="o">&gt;</span> <span class="n">partialDecoder</span> <span class="ow">=</span> <span class="kt">Json</span><span class="o">.</span><span class="n">succeed</span><span class="p">(</span><span class="kt">Point</span><span class="p">)</span> <span class="p">`</span><span class="n">andThen</span><span class="p">`</span> <span class="nf">\</span>
+</span><span class='line'>    <span class="p">(</span><span class="nf">\</span><span class="n">f</span> <span class="ow">-&gt;</span> <span class="p">(</span><span class="s">&quot;x&quot;</span> <span class="kt">:=</span> <span class="kt">Json</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="p">`</span><span class="n">andThen</span><span class="p">`</span> <span class="nf">\</span>
+</span><span class='line'>    <span class="p">(</span><span class="nf">\</span><span class="n">x</span> <span class="ow">-&gt;</span> <span class="kt">Json</span><span class="o">.</span><span class="n">succeed</span> <span class="o">&lt;|</span> <span class="n">f</span> <span class="n">x</span><span class="p">))</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span><span class="o">&gt;</span> <span class="kt">:</span> <span class="kt">Json</span><span class="o">.</span><span class="kt">Decode</span><span class="o">.</span><span class="kt">Decoder</span> <span class="p">(</span><span class="kt">Float</span> <span class="ow">-&gt;</span> <span class="kt">Repl</span><span class="o">.</span><span class="kt">Point</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;</span> <span class="n">decoderPoint</span> <span class="ow">=</span> <span class="n">partialDecoder</span> <span class="p">`</span><span class="n">andThen</span><span class="p">`</span> <span class="nf">\</span>
+</span><span class='line'>    <span class="p">(</span><span class="nf">\</span><span class="n">f</span> <span class="ow">-&gt;</span> <span class="p">(</span><span class="s">&quot;y&quot;</span> <span class="kt">:=</span> <span class="kt">Json</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="p">`</span><span class="n">andThen</span><span class="p">`</span> <span class="nf">\</span>
+</span><span class='line'>    <span class="p">(</span><span class="nf">\</span><span class="n">y</span> <span class="ow">-&gt;</span> <span class="kt">Json</span><span class="o">.</span><span class="n">succeed</span> <span class="o">&lt;|</span> <span class="n">f</span> <span class="n">y</span><span class="p">))</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span><span class="o">&gt;</span> <span class="kt">:</span> <span class="kt">Json</span><span class="o">.</span><span class="kt">Decode</span><span class="o">.</span><span class="kt">Decoder</span> <span class="kt">Repl</span><span class="o">.</span><span class="kt">Point</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Cool, right? Now that you and I understand the technique, we can go back to the gif above and marvel at how poor my CSS skills are.</p>
+
+<h2>No magic</h2>
+
+<p>What I find the most refreshing as I dive into functional programming is that there&rsquo;s (usually) no magic. If you start peeling the layers, there&rsquo;s just functions brought together to perform amazing things. <code>apply</code> here is exactly that: the power of a few functions allowing you to convert arbitrarily large structures into a nice type Elm can understand. In a world of &ldquo;factory this&rdquo; &ldquo;IoC container that&rdquo;, you can&rsquo;t help but smile. And it REALLY REALLY REALLY improves your programming everywhere: I&rsquo;m a fan of saying my Ruby is much better and more maintainable after I decided to learn the functional ways because it&rsquo;s true. Hopefully you can find the same joy.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Vitor Capela</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-17T22:31:00-03:00" pubdate data-updated="true">Aug 17<span>th</span>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/applicative/'>applicative</a>, <a class='category' href='/blog/categories/applicative/'>applicative</a>, <a class='category' href='/blog/categories/elm/'>elm</a>, <a class='category' href='/blog/categories/elm0-dot-15/'>elm0.15</a>, <a class='category' href='/blog/categories/fp/'>fp</a>, <a class='category' href='/blog/categories/thinking/'>thinking</a>, <a class='category' href='/blog/categories/thinking-functionally/'>thinking-functionally</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://troikatech.com/blog/2015/08/17/decoding-larger-json-objects-in-elm/" data-via="dodecaphonic" data-counturl="http://troikatech.com/blog/2015/08/17/decoding-larger-json-objects-in-elm/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/04/28/ruby-is-a-friend/" title="Previous Post: Ruby is a friend">&laquo; Ruby is a friend</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/08/17/decoding-larger-json-objects-in-elm/">Decoding Larger JSON Objects in Elm 0.15</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/28/ruby-is-a-friend/">Ruby Is a Friend</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/02/maybe-haskell/">Maybe Haskell</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/11/26/ensime-and-emacs-as-a-scala-ide/">ENSIME and Emacs as a Scala IDE</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/07/functional-programming-in-ruby/">Functional Programming in Ruby</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/dodecaphonic">@dodecaphonic</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'dodecaphonic',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/+VitorCapela?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - Vitor Capela -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
