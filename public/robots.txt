@@ -1,4 +1,0 @@
-User-agent: *
-Disallow: 
-
-Sitemap: http://troikatech.com/sitemap.xml 

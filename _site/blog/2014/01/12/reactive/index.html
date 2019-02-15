@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>“Principles of Reactive Programming”, a review | Troika Tech</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="“Principles of Reactive Programming”, a review" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="After the positive experience learning some Scala and some functional patterns in Functional Programming Principles in Scala, I was excited to undertake the new course from Martin Odersky and co. The fact that it would pick up from where it left off and build on the Reactive brouhaha was icing in the cake; after all, the techniques and technologies approached in the lectures highlight some of what Scala does best." />
+<meta property="og:description" content="After the positive experience learning some Scala and some functional patterns in Functional Programming Principles in Scala, I was excited to undertake the new course from Martin Odersky and co. The fact that it would pick up from where it left off and build on the Reactive brouhaha was icing in the cake; after all, the techniques and technologies approached in the lectures highlight some of what Scala does best." />
+<link rel="canonical" href="http://localhost:4000/blog/2014/01/12/reactive/" />
+<meta property="og:url" content="http://localhost:4000/blog/2014/01/12/reactive/" />
+<meta property="og:site_name" content="Troika Tech" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2014-01-12T13:15:00-02:00" />
+<script type="application/ld+json">
+{"description":"After the positive experience learning some Scala and some functional patterns in Functional Programming Principles in Scala, I was excited to undertake the new course from Martin Odersky and co. The fact that it would pick up from where it left off and build on the Reactive brouhaha was icing in the cake; after all, the techniques and technologies approached in the lectures highlight some of what Scala does best.","headline":"“Principles of Reactive Programming”, a review","dateModified":"2014-01-12T13:15:00-02:00","datePublished":"2014-01-12T13:15:00-02:00","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/blog/2014/01/12/reactive/"},"url":"http://localhost:4000/blog/2014/01/12/reactive/","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Troika Tech" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Troika Tech</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">&quot;Principles of Reactive Programming&quot;, a review</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2014-01-12T13:15:00-02:00" itemprop="datePublished">Jan 12, 2014
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>After the positive experience learning some Scala and some functional patterns in <a href="https://www.coursera.org/course/progfun">Functional Programming Principles in Scala</a>, I was excited to undertake the new course from Martin Odersky and co. The fact that it would pick up from where it left off and build on the <a href="http://www.reactivemanifesto.org/">Reactive brouhaha</a> was icing in the cake; after all, the techniques and technologies approached in the lectures highlight some of what Scala does best.</p>
+
+<h2 id="structure">Structure</h2>
+
+<p>It starts with mr. Odersky’s already familiar style, reviewing some of what was taught in the previous course and expanding on some topics. The dreaded Monads were dealt with, and while I can’t talk about the subject from a theoretical standpoint or offer a perfect explanation, I feel I grasp how they can be used to compose behavior and express functionality better.</p>
+
+<p>The second part was the highlight, for me. Erik Meijer (from LINQ and Reactive Extensions fame on the .NET land) has an incredibly upbeat energy and great sense of humor, which carry you like a breeze through the amazing concepts he expresses. I loved thinking about Event streams and how to compose them using monadic combinators in the form of <code>Observables</code> (alongside <code>Subscriptions</code>, <code>Schedulers</code>, <code>Promises</code> and <code>Futures</code>). I think this affected me the most, for I could clearly see how to mix and match things to add behavior.</p>
+
+<p>The third part was also very good. Roland Kuhn (Akka’s tech lead) has a soft-spoken style that relaxes you while he lays the groundwork over which you’ll learn about Actors, building distributed systems and dealing with failure in that model. He also shows piece by piece what <a href="http://akka.io">Akka</a> can do (which led me to explore more of <a href="https://github.com/celluloid/celluloid">Celluloid</a>, a topic for a future post).</p>
+
+<h2 id="exercises">Exercises</h2>
+
+<p>Everything comes together with each week’s exercises. The first was a quick-and-simple one that explores <a href="http://www.scalacheck.org/">property testing</a>. I went through it quickly, but I still find it hard to apply that mode of thinking, and didn’t get much out of the technique later on. I know this is a personal limitation, as some people in the course forums mentioned using it to great effect.</p>
+
+<p>After that, you get a wake-up call that this is gonna require some hard work right as you’re asked to build two simulations: one of circuits, with emphasis on building a demultiplexer, and one of an epidemy. The fact that this involves timing and sequencing makes you think about state and purely functional programs. Building something substantial (and fun to watch) gives you an appreciation of their usefulness.</p>
+
+<p><img src="http://dl.dropboxusercontent.com/s/ml6pp98zwfufbob/2014-01-12%20at%2014.52.png" alt="Epidemy simulation" /></p>
+
+<p>Erik Meijer’s had cool, practical examples: you build a node-style web server (with a Reactor loop) in the first week and a Wikipedia Swing client using reactive streams for GUI events and networking in the second. It makes you want to write everything in this style, because it becomes much easier to think about <em>what</em> happens <em>when</em> with <em>whom</em>.</p>
+
+<p>The third section, on Akka, takes the prize in this area: first you redo the binary search tree exercise from the first course using Actors, which I found a great idea, as you’re confronted just with the new concepts. Then you are challenged into building a (simplified) distributed key-value store, including replication and joining of new nodes. Describing this exercise to colleagues made them want to take the course. I hope they do.</p>
+
+<h2 id="scala">Scala</h2>
+
+<p>Being forced to use more Scala made my interest in it grow more and more. <a href="https://al3x.net/">Alex Payne</a> has said that it feels a bit like Ruby in its expressiveness, and I got that while building the exercises. I confess it is refreshing and enlightening to use types as a way of reasoning, and not as something that just soothes a compiler with a frail ego.</p>
+
+<p>On the other hand, tooling was problematic. Being an Emacs user, I try to keep in it at all times, and surprisingly (coupled with <a href="https://github.com/aemoncannon/ensime">ENSIME</a>) the experience was not bad. Still I tried to take the opportunity to learn a little bit more about what is offered and how well it works, and the experience was not so great. Importing the provided Eclipse projects sometimes resulted in missing dependencies; importing the sbt project in IntelliJ IDEA resulted in error messages complaining about the TEST context, which some of the students claimed could be solved with nightly builds of its Scala and SBT plugins.</p>
+
+<p>In ENSIME it mostly worked fine. Sometimes I needed to run the tests before generating the project in <code>sbt</code>, or to regenerate the project as I fleshed out the code. This was not that that awful, in the end: coming from a world of no static types, no code completion, poor navigation (seriously, guys, I’ve used dynamic languages for over 15 years, and grep/ack/ag is not a good replacement) and pretty crude automatic refactorings, it felt like I was thrown into a better world. I find myself missing it in my daily Ruby dealings.</p>
+
+<p><img src="http://dl.dropboxusercontent.com/s/c0ce5j0jlknn90r/2014-01-12%20at%2014.47.png" alt="ENSIME as I worked through the exercises" /></p>
+
+<p>I realize the situation with Eclipse and IntelliJ may be specific to the course, as the canonical thing to use was sbt. However, being that sbt is the canonical build tool, period, it made the experience messy, and complaints in the forum suggest there’s still a lot to improve here. We developers are used these sorts of hurdles (and, let’s be frank, to learning workarounds), but this is the type of thing that turns off someone that is not yet invested in the tech.</p>
+
+<h2 id="what-i-learned-about-myself">What I learned about myself</h2>
+
+<p>Comparing my approach to my fellow students’, I found I could go through most things relatively easily, based on experience alone, but that eventually I had to exercise muscles in areas I consider mostly weak: self-reliance and grit. It was necessary to overcome my impulse to procrastinate when facing a roadblock, and also to not feel guilty about going to the forums, reading about other people’s struggles or using a test suite that some kind soul provided for everyone else.</p>
+
+<p>To face things that are known but empirically unexplored made me question my ability, and demanded a hard look at my self-image. It took great care and some pain to keep motivated and think of the outcome. The sense of pride from having completed this without delaying a single exercise makes me believe I can accomplish more. Furthermore, getting a near-perfect score for the effort is very sweet.</p>
+
+<p>I hope this helps me become a little more patient. My instinct is to go for quick intellectual gratification, for tight feedback loops, and that is not always possible (or even desirable). Standing on the shoulder of giants requires a climb; I must remember not be discouraged after the first stretch.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>I recommend everyone to go through this course. It is challenging, rewarding and (for me) a good source of personal growth. Scala is very interesting, and worthy of your time, and Akka is incredible. I found the different teaching styles refreshing, a great way to keep the learner engaged. All in all, a delightful experience.</p>
+
+
+  </div><a class="u-url" href="/blog/2014/01/12/reactive/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Troika Tech</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Troika Tech</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/dodecaphonic"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">dodecaphonic</span></a></li><li><a href="https://www.twitter.com/dodecaphonic"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">dodecaphonic</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Ruby and JS in the streets, Haskell and friends between the sheets.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

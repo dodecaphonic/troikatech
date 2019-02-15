@@ -1,0 +1,889 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2019-02-15T15:43:42-02:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Troika Tech</title><subtitle>Ruby and JS in the streets, Haskell and friends between the sheets.</subtitle><entry><title type="html">Decoding larger JSON objects in Elm 0.15</title><link href="http://localhost:4000/blog/2015/08/17/decoding-larger-json-objects-in-elm/" rel="alternate" type="text/html" title="Decoding larger JSON objects in Elm 0.15" /><published>2015-08-17T22:31:00-03:00</published><updated>2015-08-17T22:31:00-03:00</updated><id>http://localhost:4000/blog/2015/08/17/decoding-larger-json-objects-in-elm</id><content type="html" xml:base="http://localhost:4000/blog/2015/08/17/decoding-larger-json-objects-in-elm/">&lt;p&gt;&lt;a href=&quot;http://elm-lang.org/&quot;&gt;Elm&lt;/a&gt; is pretty cool. It’s a functional programming language with a &lt;a href=&quot;https://www.youtube.com/watch?v=oYk8CKH7OhE&quot;&gt;focus on usability&lt;/a&gt;, strongly-typed but unceremonious, with nice type inferencing, good documentation and great stewardship from its creator, &lt;a href=&quot;http://evan.czaplicki.us/&quot;&gt;Evan Czaplicki&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;It’s so cool I’ve given an excited talk about it at work after only a couple of weeks of fiddling with it. And whenever I speak about tech, I try to add a demo or two to tie things together and make points clearer. That led to &lt;a href=&quot;https://github.com/dodecaphonic/elm-forecast&quot;&gt;elm-forecast&lt;/a&gt;, a tiny app showing how to call APIs, decode JSON and display things on the screen.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://s3.amazonaws.com/troikatech/elm_json/elm-forecast.gif&quot; alt=&quot;What elm-forecast looks like&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;the-problem&quot;&gt;The problem&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://developer.forecast.io/&quot;&gt;Dark Sky’s JSON API&lt;/a&gt; offers detailed weather information for most of the world. It has up-to-the minute data for some locations, and powers a lot of nice weather apps, like &lt;a href=&quot;http://forecast.io&quot;&gt;forecast.io&lt;/a&gt; and &lt;a href=&quot;https://play.google.com/store/apps/details?id=com.samruston.weather&amp;amp;hl=en&quot;&gt;Weather Timeline&lt;/a&gt;. My app was also going to be nice, so I picked it as my data source.&lt;/p&gt;
+
+&lt;p&gt;I started by wrapping the current forecast definition as a &lt;a href=&quot;http://elm-lang.org/docs/records&quot;&gt;record&lt;/a&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;language-haskell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kr&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;alias&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Forecast&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;time&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Int&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;summary&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;icon&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;precipIntensity&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;precipProbability&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;temperature&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;windSpeed&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;windBearing&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;humidity&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;visibility&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cloudCover&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pressure&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ozone&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Record types marry a lot of the feel of JavaScript objects with static types (the things after the colons).&lt;/p&gt;
+
+&lt;p&gt;If you’re familiar with dynamic languages, the next step will seem alien: instead of just calling something like &lt;code class=&quot;highlighter-rouge&quot;&gt;JSON.parse(obj)&lt;/code&gt; and referencing its fields, we have to tell Elm how to make a typed &lt;code class=&quot;highlighter-rouge&quot;&gt;Forecast&lt;/code&gt; out of the serialized data.&lt;/p&gt;
+
+&lt;p&gt;Let’s see what it looks like with a smaller object:&lt;/p&gt;
+
+&lt;div class=&quot;language-haskell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;elm&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;repl&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;Elm&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;REPL&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;0.4&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Elm&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Platform&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;0.15&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;See&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;usage&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;examples&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;at&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;https&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;://&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;github&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;com&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;elm&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lang&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;elm&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;repl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;Type&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;help&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;help&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;exit&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;exit&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;kr&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Json.Decode&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Json&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;exposing&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;kr&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;alias&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Point&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;serialized&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;{&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;: -43.123, &lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;: -22.321}&quot;&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;&quot;{&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;: -43.123, &lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;: -22.321}&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pointDecoder&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;object2&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;   &lt;span class=&quot;kt&quot;&gt;Point&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;   &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;x&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;float&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;   &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;y&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;float&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Decode&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Decoder&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Repl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Point&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;decodeString&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pointDecoder&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;serialized&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;Ok&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;43.123&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;y&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;22.321&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Result&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Result&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Repl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Point&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The code above defines a type &lt;code class=&quot;highlighter-rouge&quot;&gt;Point&lt;/code&gt; and a &lt;code class=&quot;highlighter-rouge&quot;&gt;Json.Decode.Decoder&lt;/code&gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;pointDecoder&lt;/code&gt;, which takes care of deserializing an object with two fields (&lt;code class=&quot;highlighter-rouge&quot;&gt;object2&lt;/code&gt;) and returning a &lt;code class=&quot;highlighter-rouge&quot;&gt;Point&lt;/code&gt;. As you can see, no types have been declared, yet Elm has inferred every single one of them.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Json.Decode&lt;/code&gt; has functions from &lt;code class=&quot;highlighter-rouge&quot;&gt;object1&lt;/code&gt; to &lt;code class=&quot;highlighter-rouge&quot;&gt;object8&lt;/code&gt;, capable of building objects with one up to eight fields. What to do with &lt;code class=&quot;highlighter-rouge&quot;&gt;Forecast&lt;/code&gt;, that has &lt;strong&gt;13&lt;/strong&gt;? &lt;em&gt;“Throw away five things, it’s just an example app you’re building to learn Elm”&lt;/em&gt;, thought the lazy author. Luckily, thirst for knowledge (and a little guilt) averted that course, and I relied on what little functional programming I know to &lt;em&gt;almost&lt;/em&gt; get there using &lt;a href=&quot;http://package.elm-lang.org/packages/elm-lang/core/1.0.0/Json-Decode#andThen&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Json.Decoder.andThen&lt;/code&gt;&lt;/a&gt;. Since &lt;em&gt;almost&lt;/em&gt; is actually &lt;em&gt;not quite&lt;/em&gt;, to Google I went. &lt;a href=&quot;https://groups.google.com/forum/m/#!topic/elm-discuss/2LxEUVe0UBo&quot;&gt;A thread with a recipe from mr. Czaplicki himself&lt;/a&gt; offered the following solution:&lt;/p&gt;
+
+&lt;div class=&quot;language-haskell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kr&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Json.Decode&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Json&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;apply&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Decoder&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Decoder&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Decoder&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;apply&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;value&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;
+    &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;object2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;|&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;value&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Let’s see it in action:&lt;/p&gt;
+
+&lt;div class=&quot;language-haskell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;newPointDecoder&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;map&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Point&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;x&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;float&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;apply&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;`&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;y&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;float&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Decode&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Decoder&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Repl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Point&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;decodeString&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;newPointDecoder&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;serialized&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;Ok&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;43.123&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;y&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;22.321&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Result&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Result&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Repl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Point&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;With &lt;code class=&quot;highlighter-rouge&quot;&gt;apply&lt;/code&gt;, you can chain as many decoders as you like and build &lt;code class=&quot;highlighter-rouge&quot;&gt;objectN&lt;/code&gt;. But how does it work?&lt;/p&gt;
+
+&lt;h2 id=&quot;a-detour-to-the-world-of-partial-application&quot;&gt;A detour to the world of Partial Application&lt;/h2&gt;
+
+&lt;p&gt;In Elm, like in Haskell, every function is &lt;em&gt;curried&lt;/em&gt;. What it means, in practice, is that every function takes a single argument and returns a value, which can in turn be another function, taking a single argument, returning a value, and so forth. I’ll define a function &lt;code class=&quot;highlighter-rouge&quot;&gt;add&lt;/code&gt; that (oh, how impressive) adds two numbers:&lt;/p&gt;
+
+&lt;div class=&quot;language-haskell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;add&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;y&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;number&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;number&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;number&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;add&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;
+&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;number&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;It looks like a function call with two arguments, like you see in most other languages. But look at the type signature the compiler inferred: &lt;code class=&quot;highlighter-rouge&quot;&gt;add : number -&amp;gt; number -&amp;gt; number&lt;/code&gt;. What do the arrows represent? Well, they tell you exactly that the paragraph above tries to explain. Let’s see:&lt;/p&gt;
+
+&lt;div class=&quot;language-haskell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;add2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;add&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;number&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;number&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;add2&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;
+&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;number&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;When defining &lt;code class=&quot;highlighter-rouge&quot;&gt;add2&lt;/code&gt;, I’ve &lt;em&gt;partially&lt;/em&gt; applied &lt;code class=&quot;highlighter-rouge&quot;&gt;add&lt;/code&gt; with &lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;, getting another function (now from &lt;code class=&quot;highlighter-rouge&quot;&gt;number -&amp;gt; number&lt;/code&gt;). Calling that function will then result in a final number, the &lt;code class=&quot;highlighter-rouge&quot;&gt;5&lt;/code&gt; literal that amazes people all over the world. This very characteristic helps you build &lt;code class=&quot;highlighter-rouge&quot;&gt;apply&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;In the example a few paragraphs above, &lt;code class=&quot;highlighter-rouge&quot;&gt;Point&lt;/code&gt; is a function with the signature &lt;code class=&quot;highlighter-rouge&quot;&gt;Float -&amp;gt; Float -&amp;gt; Point&lt;/code&gt;. That means that if I try to use it with a single decoder, it will move closer to getting an actual &lt;code class=&quot;highlighter-rouge&quot;&gt;Point&lt;/code&gt;, but not get there yet:&lt;/p&gt;
+
+&lt;div class=&quot;language-haskell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;map&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Point&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;x&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;float&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Decode&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Decoder&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Repl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Point&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Looking at the type signature, it’s a structure that decodes a &lt;code class=&quot;highlighter-rouge&quot;&gt;Float&lt;/code&gt; and returns another structure that can decode a function &lt;code class=&quot;highlighter-rouge&quot;&gt;Float -&amp;gt; Point&lt;/code&gt;. If I tried to do the same thing with a type constructor that took more arguments, say &lt;code class=&quot;highlighter-rouge&quot;&gt;Float -&amp;gt; String -&amp;gt; Bool -&amp;gt; String -&amp;gt; Value&lt;/code&gt;, the first step would yield a Decoder with type &lt;code class=&quot;highlighter-rouge&quot;&gt;(String -&amp;gt; Bool -&amp;gt; String -&amp;gt; Value)&lt;/code&gt; — solved for the first parameter, still waiting for a resolution for the next three.&lt;/p&gt;
+
+&lt;p&gt;What &lt;code class=&quot;highlighter-rouge&quot;&gt;apply&lt;/code&gt; does then is leverage the fact that you can progressively get to your final value by applying function by function, taking care of spitting out every every step as a &lt;code class=&quot;highlighter-rouge&quot;&gt;Json.Decoder&lt;/code&gt;. There’s a name for this pattern of having a function in a box and applying it to values in other boxes: it’s an &lt;a href=&quot;https://wiki.haskell.org/Typeclassopedia#Applicative&quot;&gt;Applicative functor&lt;/a&gt;. Now, if you’ve read a bit about the language, you know that Elm shies away from the burden of a Math-y, Haskell-y lexicon. The great thing is that by hiding the words but showing things in practice, it ends up fostering an intuition in programmers for how the concepts can be &lt;em&gt;useful&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Let’s go back to &lt;code class=&quot;highlighter-rouge&quot;&gt;Json.Decode.object2&lt;/code&gt;. It expects &lt;code class=&quot;highlighter-rouge&quot;&gt;(a -&amp;gt; b -&amp;gt; c) -&amp;gt; Decoder a -&amp;gt; Decoder b -&amp;gt; Decoder c&lt;/code&gt; — a function from type &lt;code class=&quot;highlighter-rouge&quot;&gt;a&lt;/code&gt; to &lt;code class=&quot;highlighter-rouge&quot;&gt;b&lt;/code&gt; to &lt;code class=&quot;highlighter-rouge&quot;&gt;c&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;Decoder&lt;/code&gt;s for &lt;code class=&quot;highlighter-rouge&quot;&gt;a&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;b&lt;/code&gt;, yielding a &lt;code class=&quot;highlighter-rouge&quot;&gt;Decoder c&lt;/code&gt;. In our definition &lt;code class=&quot;highlighter-rouge&quot;&gt;pointDecoder&lt;/code&gt; in the beginning of this post, we matched that to a tee, as &lt;code class=&quot;highlighter-rouge&quot;&gt;Point&lt;/code&gt; can be seen as a function taking two &lt;code class=&quot;highlighter-rouge&quot;&gt;Floats&lt;/code&gt; (&lt;code class=&quot;highlighter-rouge&quot;&gt;a&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;b&lt;/code&gt;) and returning a &lt;code class=&quot;highlighter-rouge&quot;&gt;Point&lt;/code&gt; record (&lt;code class=&quot;highlighter-rouge&quot;&gt;c&lt;/code&gt;). But &lt;code class=&quot;highlighter-rouge&quot;&gt;a&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;b&lt;/code&gt; or &lt;code class=&quot;highlighter-rouge&quot;&gt;c&lt;/code&gt; can also be a function! In fact, that’s exactly what we’ve seen above with &lt;code class=&quot;highlighter-rouge&quot;&gt;Json.Decode.Decoder (Float -&amp;gt; Repl.Point)&lt;/code&gt;. Thus, when we say:&lt;/p&gt;
+
+&lt;div class=&quot;language-haskell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;object2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;|&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;value&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;and replace &lt;code class=&quot;highlighter-rouge&quot;&gt;func&lt;/code&gt; with &lt;code class=&quot;highlighter-rouge&quot;&gt;Json.Decoder.Decode (Float -&amp;gt; Point)&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt; with &lt;code class=&quot;highlighter-rouge&quot;&gt;(&quot;y&quot; := Json.float)&lt;/code&gt;, we’ll end up with a &lt;code class=&quot;highlighter-rouge&quot;&gt;Decoder&lt;/code&gt; built of applying what’s coming out of &lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt; to &lt;code class=&quot;highlighter-rouge&quot;&gt;Float -&amp;gt; Point&lt;/code&gt;, arriving at &lt;code class=&quot;highlighter-rouge&quot;&gt;Decoder Point&lt;/code&gt;. If we manually try to build the same chain, it looks like this:&lt;/p&gt;
+
+&lt;div class=&quot;language-haskell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;kr&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Json.Decode&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Json&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;exposing&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;andThen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;kr&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;alias&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Point&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partialDecoder&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;succeed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Point&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;andThen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;`&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;\&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;\&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;f&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;x&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;float&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;andThen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;`&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;\&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;\&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;succeed&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;|&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;f&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Decode&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Decoder&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Float&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Repl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Point&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;decoderPoint&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partialDecoder&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;andThen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;`&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;\&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;\&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;f&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;y&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;float&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;andThen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;`&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;\&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;\&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;y&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;succeed&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;|&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;f&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Decode&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Decoder&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Repl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Point&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Cool, right? Now that you and I understand the technique, we can go back to the gif above and marvel at how poor my CSS skills are.&lt;/p&gt;
+
+&lt;h2 id=&quot;no-magic&quot;&gt;No magic&lt;/h2&gt;
+
+&lt;p&gt;What I find the most refreshing as I dive into functional programming is that there’s (usually) no magic. If you start peeling the layers, there’s just functions brought together to perform amazing things. &lt;code class=&quot;highlighter-rouge&quot;&gt;apply&lt;/code&gt; here is exactly that: the power of a few functions allowing you to convert arbitrarily large structures into a nice type Elm can understand. In a world of “factory this” “IoC container that”, you can’t help but smile. And it REALLY REALLY REALLY improves your programming everywhere: I’m a fan of saying my Ruby is much better and more maintainable after I decided to learn the functional ways because it’s true. Hopefully you can find the same joy.&lt;/p&gt;</content><author><name></name></author><category term="elm" /><category term="fp" /><category term="applicative" /><category term="elm0.15" /><category term="thinking" /><category term="applicative" /><category term="thinking-functionally" /><summary type="html">Elm is pretty cool. It’s a functional programming language with a focus on usability, strongly-typed but unceremonious, with nice type inferencing, good documentation and great stewardship from its creator, Evan Czaplicki.</summary></entry><entry><title type="html">Ruby is a friend</title><link href="http://localhost:4000/blog/2015/04/28/ruby-is-a-friend/" rel="alternate" type="text/html" title="Ruby is a friend" /><published>2015-04-28T22:45:00-03:00</published><updated>2015-04-28T22:45:00-03:00</updated><id>http://localhost:4000/blog/2015/04/28/ruby-is-a-friend</id><content type="html" xml:base="http://localhost:4000/blog/2015/04/28/ruby-is-a-friend/">&lt;p&gt;As time goes by, Ruby moves closer and closer to the “boring tech” bin: it’s tried, true and trite (at least by &lt;a href=&quot;http://news.ycombinator.com&quot;&gt;Hacker News&lt;/a&gt; standards). And to be completely honest, I’ve often been taken by that same sentiment. The awareness of the privilege to be working with something that remains foreign to most of the Brazilian market has been replaced by a feeling of “not cool enough”, an anxiety for something as wonderful to happen again.&lt;/p&gt;
+
+&lt;p&gt;Analyzing things more carefully, however, I’ve realized how much it has allowed me to change as a coder. In Ruby, it’s very easy to go from “it’s like this in language &lt;em&gt;x&lt;/em&gt;” to “it’s like this in Ruby, too.” The &lt;a href=&quot;http://en.wikipedia.org/wiki/Moli%C3%A8re&quot;&gt;“Belle marquise”&lt;/a&gt; quality of expression it allows is a source of many joys, and can be quite invigorating as the relationship between it and the programmer develops.&lt;/p&gt;
+
+&lt;p&gt;We often feel pressured, in our field, to jump from thing to thing, from shiny to shiny, from silver bullet to silver bullet. “The best tool for the job cannot possibly be the tool you had five years ago” — chants the crowd as they try a new JavaScript build system — “it just isn’t right.” Reflecting on the role Ruby has had in my life, though, shines light on an aspect we rarely explore: a programming language is a friend. It’s not perfect, it can annoy you, but it’s there, and by merely being there and helping you think it makes you better.&lt;/p&gt;
+
+&lt;p&gt;Ruby is a &lt;em&gt;great&lt;/em&gt; friend. We’ve been together for almost ten years. I can only hope I’ve been making it better too.&lt;/p&gt;</content><author><name></name></author><category term="ruby" /><category term="cycles" /><category term="thoughts" /><category term="programming" /><category term="social" /><summary type="html">As time goes by, Ruby moves closer and closer to the “boring tech” bin: it’s tried, true and trite (at least by Hacker News standards). And to be completely honest, I’ve often been taken by that same sentiment. The awareness of the privilege to be working with something that remains foreign to most of the Brazilian market has been replaced by a feeling of “not cool enough”, an anxiety for something as wonderful to happen again.</summary></entry><entry><title type="html">Maybe Haskell</title><link href="http://localhost:4000/blog/2015/04/02/maybe-haskell/" rel="alternate" type="text/html" title="Maybe Haskell" /><published>2015-04-02T08:06:00-03:00</published><updated>2015-04-02T08:06:00-03:00</updated><id>http://localhost:4000/blog/2015/04/02/maybe-haskell</id><content type="html" xml:base="http://localhost:4000/blog/2015/04/02/maybe-haskell/">&lt;p&gt;The programming world is one of trends and fashions. One week you’re on the top of the world for using that NoSQL database, and then you’re very wrong the next; one day it’s all about Rails, the next it’s node.js, now it’s Go. Using &lt;a href=&quot;http://news.ycombinator.com&quot;&gt;Hacker News&lt;/a&gt; as a compass seemingly means discarding everything you’re doing now to follow the next big thing.&lt;/p&gt;
+
+&lt;p&gt;Like fashion, though, sometimes one of those new things is actually well-rounded, makes a mark and becomes permanent. Also like fashion, the new thing might be an old thing that people are rediscovering or just now ready to adopt. Judging by what’s on the specialized news, &lt;a href=&quot;http://en.wikipedia.org/wiki/Functional_programming&quot;&gt;Functional Programming&lt;/a&gt; is the old-new rage that’s changing the world and is here to stay.&lt;/p&gt;
+
+&lt;p&gt;It’s no wonder: more enlightened programmers and language designers have sprinkled some of the joys of that paradigm upon our OO tools, making us giggle with happiness when chaining &lt;code class=&quot;highlighter-rouge&quot;&gt;map&lt;/code&gt;s and &lt;code class=&quot;highlighter-rouge&quot;&gt;inject&lt;/code&gt;s and taking blocks to change a method’s behavior, or using anonymous and higher-order functions in tired and uncool languages of yesteryear, feeling more productive all the way. It’s so transformative to think in pipelines and in functional composition that we end up wanting to know how to learn more and feel &lt;em&gt;even better&lt;/em&gt;. Functional Programming called, and you answered.&lt;/p&gt;
+
+&lt;p&gt;But lo!, what is a catamorphism? What the hell is a Category, and why does it need a theory? Why did someone put a Monad in my burrito? Is Functor just a funny word Erik Meijer says?&lt;/p&gt;
+
+&lt;p&gt;Let’s face it: it can be daunting. None of the usual landmarks of what we call &lt;em&gt;programming&lt;/em&gt; are there to guide you through learning, and it’s easy to feel inadequate and, dare I say it, intellectually inferior. Fear not: &lt;a href=&quot;https://twitter.com/patbrisbin&quot;&gt;Pat Brisbin&lt;/a&gt; knows this, and is here to help.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-book&quot;&gt;The Book&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://maybe-haskell.com&quot;&gt;“Maybe Haskell”&lt;/a&gt;, written by the aforementioned mr. Brisbin, is a book of the short and sweet kind. It quickly acknowledges that it probably will not be the definitive guide on any of the subjects it talks about, and moves right on to the material.&lt;/p&gt;
+
+&lt;p&gt;From the gates, the author explains referential transparency and uses equational reasoning to show you how a name for an expression (let’s say &lt;code class=&quot;highlighter-rouge&quot;&gt;add(x, y)&lt;/code&gt;) can be replaced safely by the expression itself (&lt;code class=&quot;highlighter-rouge&quot;&gt;x + y&lt;/code&gt;). This will become a tool later on to clarify that what seems so elaborate is actually pretty straightforward. It’s very effective, because it unfolds everything that looks so terse and codified into its components, and those components into their components, working as both a calming device (“see how simple it is? It’s just about context”) and an illustration of the power of function composition.&lt;/p&gt;
+
+&lt;p&gt;It then gets to its main thread: what is the &lt;code class=&quot;highlighter-rouge&quot;&gt;Maybe&lt;/code&gt; type and how is it built? What does it mean to adopt &lt;code class=&quot;highlighter-rouge&quot;&gt;Maybe&lt;/code&gt; in a code base, and how do you deal with it without having every function in your system taking and returning other &lt;code class=&quot;highlighter-rouge&quot;&gt;Maybe&lt;/code&gt;s? Even if you’ve heard of or applied &lt;code class=&quot;highlighter-rouge&quot;&gt;Maybe&lt;/code&gt;, it might give you ideas and reveal unknown subtleties — especially if all you’ve learned about it has been self-directed.&lt;/p&gt;
+
+&lt;p&gt;From that on you’ll hit three head-scratchers in sequence: Functors, Applicatives and Monads. It begins with showing you ways of not infecting your code with &lt;code class=&quot;highlighter-rouge&quot;&gt;Maybe&lt;/code&gt; everywhere and ends with calling functions that take multiple &lt;code class=&quot;highlighter-rouge&quot;&gt;Maybe&lt;/code&gt;s, dealing with the possibility of one or more of them not being there. The path is of full of little joys and insights to savor, and you’ll get what a Monad &lt;em&gt;does&lt;/em&gt; by the end of it (even if the answer to what it &lt;em&gt;is&lt;/em&gt; goes through endofunctors and other details).&lt;/p&gt;
+
+&lt;p&gt;What I greatly enjoyed was the “Other Types” section. It’s brief, but tackles how you can use the same building blocks to improve designs and make errors and side-effects more explicit. While I knew most of the benefits and the material, I thought about the complete novice and how that section could spark new ideas. I didn’t “ooh” and “aah” because it was new to me: I did because it will hook a lot of casually interested people who perhaps got the book because it came from someone in the Ruby world and aren’t very invested in the ideas of FP yet. It will definitely make &lt;em&gt;Ruby&lt;/em&gt;, if nothing else, better.&lt;/p&gt;
+
+&lt;p&gt;In the end, even if “Maybe Haskell” just explains enough of what the language can do to support the examples, the quiet imponence and lack of pretense of the language become very evident. As the text progresses, you’ll see the ivory tower where FP wizards live for what it really is: a building that begins on the same ground you and I step on, made out of very solid and simple materials. Luckily we have Pat gently guiding us to that conclusion.&lt;/p&gt;</content><author><name></name></author><category term="book" /><category term="fp" /><category term="haskell" /><summary type="html">The programming world is one of trends and fashions. One week you’re on the top of the world for using that NoSQL database, and then you’re very wrong the next; one day it’s all about Rails, the next it’s node.js, now it’s Go. Using Hacker News as a compass seemingly means discarding everything you’re doing now to follow the next big thing.</summary></entry><entry><title type="html">ENSIME and Emacs as a Scala IDE</title><link href="http://localhost:4000/blog/2014/11/26/ensime-and-emacs-as-a-scala-ide/" rel="alternate" type="text/html" title="ENSIME and Emacs as a Scala IDE" /><published>2014-11-26T10:38:00-02:00</published><updated>2014-11-26T10:38:00-02:00</updated><id>http://localhost:4000/blog/2014/11/26/ensime-and-emacs-as-a-scala-ide</id><content type="html" xml:base="http://localhost:4000/blog/2014/11/26/ensime-and-emacs-as-a-scala-ide/">&lt;p&gt;&lt;em&gt;“Maybe Emacs is not enough.”&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;That popped up in my mind, and it scared me. I knew Scala was a different beast; I knew there was probably a lot I was missing out on by using my tried-and-true workflows; I knew that IntelliJ was supposed to be amazing. Still, thinking Emacs-the-almighty was not enough frightened me.&lt;/p&gt;
+
+&lt;p&gt;When I started on this slow path towards learning FP, I had been using dynamic languages almost exclusively for almost 14 years, with a short stop in C++-land for a couple of them. I was used to a world of mostly ok tools centered on a REPL, and it was fine — programming is more thinking than typing and clicking, that whole &lt;em&gt;spiel&lt;/em&gt;. But I had never really done anything in a good type system, and, frankly, it was time I knew how the rest of the world leveraged their tools in order to work more comfortably and effectively.&lt;/p&gt;
+
+&lt;p&gt;With that in mind, I evaluated the Typesafe IDE and IntelliJ IDEA 12 and 13, finding a lot of good in both tools (and a few problems, some discussed in my post about the &lt;a href=&quot;/blog/2014/01/12/reactive&quot;&gt;Reactive Programming course&lt;/a&gt;). Still, after a few good days with each option, I was tempted to just go back to Emacs and rely on my memory (and &lt;a href=&quot;http://kapeli.com/dash&quot;&gt;Dash&lt;/a&gt;) for the API signatures, do all my code refactorings by hand and use the &lt;code class=&quot;highlighter-rouge&quot;&gt;sbt console&lt;/code&gt; for quick explorations.&lt;/p&gt;
+
+&lt;p&gt;Then I found out I could have the cake and eat it too.&lt;/p&gt;
+
+&lt;h2 id=&quot;enter-ensime&quot;&gt;Enter ENSIME&lt;/h2&gt;
+
+&lt;p&gt;ENSIME (&lt;strong&gt;ENhanced Scala Interaction Mode for Emacs&lt;/strong&gt;) is a project that gives Emacs IDE-like capabilities. It performs type and error-checking as you write code, provides symbol inspection, facilities for browsing your codebase and performing automated refactorings. It accomplishes all that using the &lt;a href=&quot;http://scala-ide.org/docs/dev/architecture/presentation-compiler.html&quot;&gt;Scala Presentation Compiler&lt;/a&gt;, a lightweight version of the infrastructure that goes only as far as needed to resolve types, find errors and do semantic highlighting.&lt;/p&gt;
+
+&lt;p&gt;Setting it up is super simple. Using MELPA, install the &lt;code class=&quot;highlighter-rouge&quot;&gt;ensime&lt;/code&gt; package. Then add the following to your Emacs config:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;(require 'ensime)
+(add-hook 'scala-mode-hook 'ensime-scala-mode-hook)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Then add the plugin to your global &lt;code class=&quot;highlighter-rouge&quot;&gt;sbt&lt;/code&gt; config (e.g. &lt;code class=&quot;highlighter-rouge&quot;&gt;~/.sbt/0.13/plugins/plugins.sbt&lt;/code&gt;):&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;resolvers&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Resolver&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sonatypeRepo&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;snapshots&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;addSbtPlugin&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;org.ensime&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;ensime-sbt&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;0.1.5-SNAPSHOT&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;And then, in your project directory, run &lt;code class=&quot;highlighter-rouge&quot;&gt;sbt gen-ensime&lt;/code&gt; (requires sbt &amp;gt;= 0.13.5). It will resolve the dependencies, install the ENSIME plugin and leave everything ready to go.&lt;/p&gt;
+
+&lt;p&gt;Now, when you open a buffer, you’re gonna see the following in your mode line:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/s/zss0kz5lr8hvhmr/2014-11-27%20at%2010.22.png&quot; title=&quot;ENSIME Disconnected&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Use &lt;code class=&quot;highlighter-rouge&quot;&gt;M-x ensime&lt;/code&gt; to start a connection. It might take a few seconds for it to do what it must to analyze your project, but you’ll eventually see the mode line change to show it’s ready to work.&lt;/p&gt;
+
+&lt;h2 id=&quot;code-completion&quot;&gt;Code completion&lt;/h2&gt;
+
+&lt;p&gt;One of the cool things ENSIME provides is real code completion, based on the type you’re dealing with. Instead of the usual &lt;code class=&quot;highlighter-rouge&quot;&gt;M-/&lt;/code&gt; cycling, you can explore an API by looking at the method signatures and documentation. Here’s the thing in action:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://s3.amazonaws.com/troikatech/ensime_as_ide/completion.gif&quot; title=&quot;Completing&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;type-inspection&quot;&gt;Type inspection&lt;/h2&gt;
+
+&lt;p&gt;Sometimes Scala’s type inference engine gets confused, giving you something too broad or too narrow for your needs; other times, you just want to know the type of a &lt;code class=&quot;highlighter-rouge&quot;&gt;val&lt;/code&gt;. Worry not: ENSIME can tell you what has been inferenced just by putting the cursor over the token you want and pressing &lt;code class=&quot;highlighter-rouge&quot;&gt;C-c C-v i&lt;/code&gt; (works a bit like &lt;code class=&quot;highlighter-rouge&quot;&gt;:t&lt;/code&gt; in &lt;code class=&quot;highlighter-rouge&quot;&gt;ghci&lt;/code&gt;).&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://s3.amazonaws.com/troikatech/ensime_as_ide/type_at_point.gif&quot; title=&quot;Inspecting types&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;You can also show uses of a symbol by pressing &lt;code class=&quot;highlighter-rouge&quot;&gt;C-c C-v r&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;automated-refactorings&quot;&gt;Automated Refactorings&lt;/h2&gt;
+
+&lt;p&gt;ENSIME offers six simple, but extremely useful automated refactorings:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Inline Local&lt;/li&gt;
+  &lt;li&gt;Extract Local&lt;/li&gt;
+  &lt;li&gt;Extract Method&lt;/li&gt;
+  &lt;li&gt;Rename&lt;/li&gt;
+  &lt;li&gt;Organize Imports&lt;/li&gt;
+  &lt;li&gt;Import Type at Point&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://s3.amazonaws.com/troikatech/ensime_as_ide/refactoring.gif&quot; title=&quot;Refactoring&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Of all of these, &lt;em&gt;Import Type at Point&lt;/em&gt; is the only one I’d consider flaky. It resolves the type perfectly, but inserts the &lt;code class=&quot;highlighter-rouge&quot;&gt;import&lt;/code&gt; statement inline. I don’t know if that’s configurable. Otherwise, it works as many other automated tools: finds each change, shows you the substitution, asks you to ok it.&lt;/p&gt;
+
+&lt;h2 id=&quot;navigation&quot;&gt;Navigation&lt;/h2&gt;
+
+&lt;p&gt;You can use &lt;code class=&quot;highlighter-rouge&quot;&gt;M-.&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;M-*&lt;/code&gt;, normally associated with finding tags, to move inside your project.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://s3.amazonaws.com/troikatech/ensime_as_ide/navigation.gif&quot; title=&quot;Navigation&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;You can also jump from implementation to test, and vice versa.&lt;/p&gt;
+
+&lt;h2 id=&quot;scala-and-sbt-integration&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;scala&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;sbt&lt;/code&gt; integration&lt;/h2&gt;
+
+&lt;p&gt;If you press &lt;code class=&quot;highlighter-rouge&quot;&gt;C-c C-v s&lt;/code&gt;, an sbt console will be launched. A lot of my usual Ruby workflow of running specs from keybinds and jumping quickly to the REPL can be reproduced with this feature.&lt;/p&gt;
+
+&lt;p&gt;For instance, when you want to run all tests, you press &lt;code class=&quot;highlighter-rouge&quot;&gt;C-c C-b T&lt;/code&gt;. When you wish only to invoke &lt;code class=&quot;highlighter-rouge&quot;&gt;testQuick&lt;/code&gt;, you use &lt;code class=&quot;highlighter-rouge&quot;&gt;C-c C-b t&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;There’s keybinds for changing a region or a buffer, too — useful both for playing with code and exercising your Emacs gymnastics.&lt;/p&gt;
+
+&lt;h2 id=&quot;finally&quot;&gt;Finally&lt;/h2&gt;
+
+&lt;p&gt;ENSIME has been fun to work with. It allows me to focus on code and work comfortably with my (admittedly small) projects. It’s a great showcase of Emacs capabilities, and has led a couple of hardcore vim-using friends to show admiration.&lt;/p&gt;
+
+&lt;p&gt;If you’re doing Scala and don’t want to commit to an IDE, but wish to have more of a modern environment, please try ENSIME. I even hear there’s vim and jEdit clients.&lt;/p&gt;</content><author><name></name></author><category term="scala" /><category term="emacs" /><category term="ide" /><category term="ensime" /><category term="emacsrocks" /><category term="clubedosposts" /><summary type="html">“Maybe Emacs is not enough.”</summary></entry><entry><title type="html">Functional Programming in Ruby</title><link href="http://localhost:4000/blog/2014/07/07/functional-programming-in-ruby/" rel="alternate" type="text/html" title="Functional Programming in Ruby" /><published>2014-07-07T21:29:00-03:00</published><updated>2014-07-07T21:29:00-03:00</updated><id>http://localhost:4000/blog/2014/07/07/functional-programming-in-ruby</id><content type="html" xml:base="http://localhost:4000/blog/2014/07/07/functional-programming-in-ruby/">&lt;p&gt;On June 21th, 2014, I gave a talk about Functional Programming in Ruby in one of &lt;a href=&quot;http://rubyonrio.org&quot;&gt;RubyOnRio’s&lt;/a&gt; monthly meetings. I decided to do a short overview of some concepts and techniques in the FP world and then go over &lt;a href=&quot;https://twitter.com/garybernhardt&quot;&gt;Gary Bernhardt’s&lt;/a&gt; “&lt;a href=&quot;https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell&quot;&gt;Functional Core, Imperative Shell&lt;/a&gt;” — after all, it would be a hard sell if I couldn’t show a way said techniques make your everyday coding better.&lt;/p&gt;
+
+&lt;p&gt;It didn’t get recorded this time, but I thought the slides could be interesting. Here they are.&lt;/p&gt;
+
+&lt;script async=&quot;&quot; class=&quot;speakerdeck-embed&quot; data-id=&quot;77fedf60ddbf0131b761266a7d836638&quot; data-ratio=&quot;1.34031413612565&quot; src=&quot;http://speakerdeck.com/assets/embed.js&quot;&gt;&lt;/script&gt;</content><author><name></name></author><category term="fp" /><category term="ruby" /><category term="mismatch" /><category term="garybernhardt" /><summary type="html">On June 21th, 2014, I gave a talk about Functional Programming in Ruby in one of RubyOnRio’s monthly meetings. I decided to do a short overview of some concepts and techniques in the FP world and then go over Gary Bernhardt’s “Functional Core, Imperative Shell” — after all, it would be a hard sell if I couldn’t show a way said techniques make your everyday coding better.</summary></entry><entry><title type="html">Property-based testing in Ruby</title><link href="http://localhost:4000/blog/2014/04/02/property-based-testing-in-ruby/" rel="alternate" type="text/html" title="Property-based testing in Ruby" /><published>2014-04-02T10:32:00-03:00</published><updated>2014-04-02T10:32:00-03:00</updated><id>http://localhost:4000/blog/2014/04/02/property-based-testing-in-ruby</id><content type="html" xml:base="http://localhost:4000/blog/2014/04/02/property-based-testing-in-ruby/">&lt;p&gt;For the past year or so I have slowly been dipping my feet into the vast functional programming seas. From taking the awesome &lt;a href=&quot;http://coursera.org&quot;&gt;Coursera&lt;/a&gt; &lt;a href=&quot;https://www.coursera.org/course/progfun&quot;&gt;offerings&lt;/a&gt; &lt;a href=&quot;https://www.coursera.org/course/reactive&quot;&gt;from Typesafe&lt;/a&gt; to slowly working through Rúnar Bjarnason’s and Paul Chiusano’s &lt;em&gt;&lt;a href=&quot;http://www.manning.com/bjarnason/&quot;&gt;Functional Programming in Scala&lt;/a&gt;&lt;/em&gt;, my mind has been expanding proportionally to the time I dedicate to learning its ways. It has been incredibly rewarding and humbling.&lt;/p&gt;
+
+&lt;p&gt;One such reward has been coming into direct touch with property-based testing. This technique, first developed by &lt;a href=&quot;http://en.wikipedia.org/wiki/QuickCheck&quot;&gt;QuickCheck&lt;/a&gt; in Haskell-land, spins automated testing on its head: instead of codifying what is proper behavior by asserting that the outputs for given inputs match what is expected, the tester establishes logical properties about what should happen and lets the tool generate loads of inputs to check if they hold. If something goes wrong, the tool will then try to find the smallest test input that breaks the property (&lt;em&gt;falsifies&lt;/em&gt; it), a process called &lt;em&gt;shrinking&lt;/em&gt;; if it can’t find anything, you can sigh with relief and think about what to scrutinize next.&lt;/p&gt;
+
+&lt;p&gt;Having a QuickCheck-like tool at your disposal can be incredibly powerful. The more complex the software or the algorithm, the greater the likelihood of your carefully curated unit and integration tests having blind spots. &lt;a href=&quot;http://basho.com&quot;&gt;Basho&lt;/a&gt;, for instance, &lt;a href=&quot;http://basho.com/quickchecking-poolboy-for-fun-and-profit/&quot;&gt;have written about the stark realization that their worker pool library was full of subtle bugs by using QuickCheck for Erlang&lt;/a&gt;, and you can find &lt;a href=&quot;http://www.quviq.com/documents/erlang001-arts.pdf&quot;&gt;other&lt;/a&gt; &lt;a href=&quot;http://www.autosar.org/download/conferencedocs11/12_AUTOSAR_ModelBased_Quviq.pdf&quot;&gt;instances&lt;/a&gt; of how the technique helped make better software.&lt;/p&gt;
+
+&lt;p&gt;I don’t know about you, but when I come in contact with stuff like that I immediately think of how improved parts of my day job would be if I just could apply it. Considering that my daily duties are conducted in Ruby, I felt it was time I explored the subject in that realm.&lt;/p&gt;
+
+&lt;h2 id=&quot;a-contrived-setup-that-hopefully-shows-how-it-can-work-out&quot;&gt;A contrived setup that hopefully shows how it can work out&lt;/h2&gt;
+
+&lt;p&gt;Let’s say we’ve decided to implement our own linked list class in Ruby. We would probably start our implementation with something like this:&lt;/p&gt;
+
+&lt;p&gt;``` ruby “List” https://gist.github.com/dodecaphonic/9934064#file-list-rb
+require “singleton”&lt;/p&gt;
+
+&lt;p&gt;class Nil
+  include Singleton&lt;/p&gt;
+
+&lt;p&gt;def empty?; true; end&lt;/p&gt;
+
+&lt;p&gt;def to_s
+    “Nil”
+  end
+end&lt;/p&gt;
+
+&lt;p&gt;class Cons
+  def initialize(head, tail = Nil.instance)
+    @head = head
+    @tail = tail
+  end&lt;/p&gt;
+
+&lt;p&gt;attr_reader :head, :tail&lt;/p&gt;
+
+&lt;p&gt;def empty?; false; end&lt;/p&gt;
+
+&lt;p&gt;def to_s
+    “(#{head} . #{tail.to_s})”
+  end
+end&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+Using that _very_ convenient API, we can build lists:
+
+``` ruby
+&amp;gt;&amp;gt; l = Cons.new(1, Cons.new(2, Cons.new(3, Nil.instance)))
+&amp;gt;&amp;gt; l.to_s # =&amp;gt; &quot;(1 . (2 . (3 . Nil)))&quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;We know that, in a linked list, adding to the head is O(1), while appending to the end is O(n). So we build algorithms that respect its efficiency guarantees. However, when we, say, map this list into another list, it results in the following situation:&lt;/p&gt;
+
+&lt;p&gt;``` ruby “List” https://gist.github.com/dodecaphonic/9934064#file-list-rb
+def do_something_amazing(list, acc = Nil.instance)
+  super_value = list.head * 1337
+  if list.tail.empty?
+    acc
+  else
+    do_something_amazing(list.tail, List.new(super_value, acc))
+  end
+end&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;blockquote&gt;
+    &lt;p&gt;do_something(l).to_s # =&amp;gt; “(4011 . (2674 . (1337 . Nil)))”
+```&lt;/p&gt;
+  &lt;/blockquote&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Processing things from head to tail means the list ends up reversed. It’s common, then, to reverse it back when we’re done processing, to preserve the order an external user would expect. Let’s add a &lt;code&gt;reverse&lt;/code&gt; method to a &lt;code&gt;List&lt;/code&gt; helper module:&lt;/p&gt;
+
+&lt;p&gt;``` ruby “List” https://gist.github.com/dodecaphonic/9934064#file-list-rb
+module List
+  def self.reverse(list, acc = Nil.instance)
+    if list.empty?
+      acc
+    else
+      reverse(list.tail, Cons.new(list.head, acc))
+    end
+  end
+end&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+So when we try to reverse what was created in &amp;lt;code&amp;gt;do_something_amazing&amp;lt;/code&amp;gt;, we get what we need:
+
+``` ruby
+List.reverse(do_something_amazing(l)).to_s # =&amp;gt; &quot;(1337 . (2674 . (4011 . Nil)))&quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Awesome. I think this is enough for us to start exploring properties. If you’re getting bored, take a sip of coffee and come back when you’re ready. There’s a few cool tricks below the fold.&lt;/p&gt;
+
+&lt;h2 id=&quot;testing-the-old-way&quot;&gt;Testing the old way&lt;/h2&gt;
+
+&lt;p&gt;Being the good developers we are, we are covering that code with tests:&lt;/p&gt;
+
+&lt;p&gt;``` ruby “List Tests” https://gist.github.com/dodecaphonic/9934064#file-list_test-rb
+class ListTest &amp;lt; MiniTest::Test
+  def test_reversing_lists
+    assert_equal “(3 . (2 . (1 . Nil)))”,
+      List.reverse(Cons.new(1, Cons.new(2, Cons.new(3)))).to_s
+    assert_equal “(9 . (400 . (321 . (1 . (10 . Nil)))))”,
+      List.reverse(Cons.new(10, Cons.new(1, Cons.new(321, Cons.new(400, Cons.new(9)))))).to_s
+    assert_equal “Nil”, List.reverse(Nil.instance).to_s
+    assert_equal “(1 . Nil)”, List.reverse(Cons.new(1)).to_s
+  end
+end&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+We're pretty confident that's enough, even if it was kind of boring to do manually. That amount of testing would let us go home and sleep soundly.
+
+## Testing the QuickCheck way
+
+First, we'll need something like QuickCheck in Ruby. The best, most idiomatic, most maintained, least-Monad-y thing I have found is [Rantly][rantly]. It has both primitive value generation built-in and property testing with shrinking. We'll skip over the basic API and go straight to defining a property to check if my algorithm is really bullet-proof. To aid in the creation of lists from Arrays, we'll add a new helper:
+
+``` ruby &quot;List&quot; https://gist.github.com/dodecaphonic/9934064#file-list-rb
+module List
+  # ...
+  def self.from_values(*values)
+    values.reverse.inject(Nil.instance) { |ls, v| Cons.new(v, ls) }
+  end
+end
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;To check that it works, let’s change the existing tests and see if they still pass:&lt;/p&gt;
+
+&lt;p&gt;``` ruby “List Tests” https://gist.github.com/dodecaphonic/9934064#file-list_test-rb
+class ListTest &amp;lt; MiniTest::Test
+  def test_reversing_lists
+    assert_equal “(3 . (2 . (1 . Nil)))”,
+      List.reverse(List.from_values(1, 2, 3)).to_s
+    assert_equal “(9 . (400 . (321 . (1 . (10 . Nil)))))”,
+      List.reverse(List.from_values(10, 1, 321, 400, 9)).to_s
+    assert_equal “Nil”, List.reverse(Nil.instance).to_s
+    assert_equal “(1 . Nil)”, List.reverse(List.from_values(1)).to_s
+  end
+end&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;Run options: –seed 48889&lt;/p&gt;
+
+&lt;h1 id=&quot;running&quot;&gt;Running:&lt;/h1&gt;
+
+&lt;p&gt;.&lt;/p&gt;
+
+&lt;p&gt;Finished in 0.001256s, 796.1783 runs/s, 3184.7134 assertions/s.&lt;/p&gt;
+
+&lt;p&gt;1 runs, 4 assertions, 0 failures, 0 errors, 0 skips&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+Great. Now to the newfangled thing. As I mentioned before, writing a property to check requires us to think differently than we would with regular unit tests. Your formulation should state something logical, something that does not rely on specific inputs. Following that guideline, we can reason about reversing lists in the following manner:
+
+``` ruby &quot;List Tests&quot; https://gist.github.com/dodecaphonic/9934064#file-list2_test-rb
+  # ...
+  def test_reversing_by_property
+    property {
+      length = range(0, 1_000_000)
+      List.from_values(array(length) { integer })
+    }.check { |list|
+      assert_equal list.to_s, List.reverse(List.reverse(list)).to_s
+    }
+  end
+  # ...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The meat is in the &lt;code&gt;check&lt;/code&gt; block. Determining that a list has been reversed correctly requires us to check if reversing it again gets us back to the original list. To seed our check, we build a &lt;code&gt;property&lt;/code&gt; block that creats an array with a random length between 0 and 1_000_000, itself filled with random integers. Let’s run the tests again:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ bundle exec ruby list.rb
+Run options: --seed 17130
+
+# Running:
+
+.
+..........
+success: 100 tests
+.
+
+Finished in 121.969127s, 0.0164 runs/s, 0.8527 assertions/s.
+
+2 runs, 104 assertions, 0 failures, 0 errors, 0 skips
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;It took a while (we wanted to be thorough, with those million-item arrays), but we’re pretty sure it works. I’m a believer and I’m stoked; when I look at you, however, I see a face that says “look, it’s cool and all, but isn’t it &lt;em&gt;kind of worthless&lt;/em&gt;? The tests we had were telling us the same thing, and we only needed the power of our minds to generate the correct inputs. Why go through so much trouble?”&lt;/p&gt;
+
+&lt;p&gt;Well, what about those times when ours minds fail us?&lt;/p&gt;
+
+&lt;h2 id=&quot;catching-a-bug-with-rantly&quot;&gt;Catching a bug with Rantly&lt;/h2&gt;
+
+&lt;p&gt;Let’s say you’re excited about building your own data structures and want to wrap that linked list inside a very inefficient Set. You mutter to yourself that you should make sure items are not inserted twice, which for now seems to be the main difference between Sets and Lists as storage containers.&lt;/p&gt;
+
+&lt;p&gt;You build a little more structure into what you already have, adding a &lt;code&gt;prepend&lt;/code&gt; method and inlining &lt;code&gt;reverse&lt;/code&gt; into a &lt;code&gt;List&lt;/code&gt; base class:&lt;/p&gt;
+
+&lt;p&gt;```ruby “List 2” https://gist.github.com/dodecaphonic/9934064#file-list2-rb&lt;/p&gt;
+
+&lt;p&gt;class List
+  def to_s
+    raise “Don’t use this directly, fool”
+  end&lt;/p&gt;
+
+&lt;p&gt;def empty?; true; end&lt;/p&gt;
+
+&lt;p&gt;def prepend(v)
+    Cons.new(v, self)
+  end&lt;/p&gt;
+
+&lt;p&gt;def reverse(acc = Nil.instance)
+    if empty?
+      acc
+    else
+      tail.reverse(Cons.new(head, acc))
+    end
+  end&lt;/p&gt;
+
+&lt;p&gt;def self.from_values(*values)
+    values.reverse.inject(Nil.instance) { |ls, v| Cons.new(v, ls) }
+  end&lt;br /&gt;
+end&lt;/p&gt;
+
+&lt;p&gt;class Nil &amp;lt; List
+  include Singleton&lt;/p&gt;
+
+&lt;p&gt;def to_s
+    “Nil”
+  end
+end&lt;/p&gt;
+
+&lt;p&gt;class Cons &amp;lt; List
+  def initialize(head, tail = Nil.instance)
+    @head = head
+    @tail = tail
+  end&lt;/p&gt;
+
+&lt;p&gt;attr_reader :head, :tail&lt;/p&gt;
+
+&lt;p&gt;def empty?; false; end&lt;/p&gt;
+
+&lt;p&gt;def to_s
+    “(#{head} . #{tail.to_s})”
+  end
+end&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+To check if an item exists, you add a &amp;lt;code&amp;gt;contains?&amp;lt;/code&amp;gt; method:
+
+``` ruby &quot;List with contains&quot; https://gist.github.com/dodecaphonic/9934064#file-list2-rb
+class List
+  # ..
+  def contains?(v); false; end
+  # ..
+end
+
+class Cons &amp;lt; List
+  # ..
+  def contains?(v)
+    head == v || tail.contains?(v)
+  end
+  # ..
+end
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Then you write your immutable Set and matching tests:&lt;/p&gt;
+
+&lt;p&gt;``` ruby “A dumb set implementation” https://gist.github.com/dodecaphonic/9934064#file-set-rb
+class DumbSet
+  def initialize(storage = Nil.instance)
+    @storage = storage
+  end&lt;/p&gt;
+
+&lt;p&gt;attr_reader :storage
+  private     :storage&lt;/p&gt;
+
+&lt;p&gt;def push(v)
+    if !storage.contains?(v)
+      DumbSet.new(storage.prepend(v))
+    else
+      self
+    end
+  end
+  alias_method :«, :push&lt;/p&gt;
+
+&lt;p&gt;def contains?(v)
+    storage.contains?(v)
+  end&lt;/p&gt;
+
+&lt;p&gt;def to_a
+    values = []
+    list   = storage
+    until list.empty?
+      values « list.head
+      list = list.tail
+    end
+    values
+  end
+end&lt;/p&gt;
+
+&lt;p&gt;class DumbSetTest &amp;lt; Minitest::Test
+  def setup
+    @s = (((DumbSet.new « 1) « 2) « 3)
+  end&lt;/p&gt;
+
+&lt;p&gt;attr_reader :s&lt;/p&gt;
+
+&lt;p&gt;def test_contains
+    assert s.contains?(3)
+    assert s.contains?(2)
+    assert s.contains?(1)
+    assert !s.contains?(4)
+  end&lt;/p&gt;
+
+&lt;p&gt;def test_uniqueness
+    assert_equal [-32, 1, 2, 3], (s « -32 « -32 « -32).to_a.sort
+  end
+end&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+And because I spotted you writing new code and yelled &quot;HEY USE RANTLY IT'S SO COOL YIPEE&quot;, you add some property tests:
+
+``` ruby 
+class DumbSetTest &amp;lt; Minitest::Test
+  # ...
+def test_contains_property
+    property {
+      array(range(0, 100)) { integer }
+    }.check { |vs|
+      s = vs.inject(DumbSet.new) { |ds, v| ds &amp;lt;&amp;lt; v }
+      assert vs.all? { |v| s.contains?(v) }
+    }
+  end
+
+  def test_uniqueness_property
+    property {
+      array(range(0, 100)) { integer }
+    }.check { |vs|
+      ns = vs.inject(DumbSet.new) { |ds, v| ds &amp;lt;&amp;lt; v }
+      rs = vs.inject(ns) { |ds, v| ds &amp;lt;&amp;lt; v }
+      assert_equal vs.sort, ns.to_a.sort
+    }
+  end
+  # ...
+end  
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;It looks good:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ bundle exec ruby set_test.rb
+Run options: --seed 15625
+
+# Running:
+
+
+..........
+success: 100 tests
+..
+..........
+success: 100 tests
+..
+
+Finished in 0.119717s, 33.4121 runs/s, 1720.7247 assertions/s.
+
+4 runs, 206 assertions, 0 failures, 0 errors, 0 skips
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;You then implement the removal of items:&lt;/p&gt;
+
+&lt;p&gt;``` ruby “Set with delete” https://gist.github.com/dodecaphonic/9934064#file-set-rb
+class DumbSet
+  # …
+  def delete(v)
+    ls = storage
+    ns = DumbSet.new&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;while !ls.empty?
+  if ls.head != v
+    ns = ns &amp;lt;&amp;lt; v
+  end
+
+  ls = ls.tail
+end
+
+ns   end   # ... end
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;class DumbSetTest &amp;lt; Minitest::TestCase
+  # …
+  def test_delete
+    os = (((DumbSet.new « 1) « 2) « 3)
+    ns = os.delete(1337)
+    assert_equal [1, 2, 3], ns.to_a.sort
+    ns = os.delete(3)
+    assert_equal [1, 2], ns.to_a.sort
+    ns = ns.delete(2)
+    assert_equal [1], ns.to_a.sort
+    ns = (ns « 432).delete(1)
+    assert_equal [432], ns.to_a.sort
+    ns = ns.delete(432)
+    assert_equal [], ns.to_a.sort
+  end
+  # …
+end&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+Your tests pass, but this time you don't listen to me about adding another property. You're just not that convinced they're worth their salt, and it looks good enough to ship with all the tests you've added. The Pokémon Collecting app you work on can benefit from it right now, instead of 20 minutes from now. To production it goes.
+
+Time goes by, and you've forgotten about me and our little adventure. Your system is humming along and moved on to maintenance mode. Days have been kind of slow, so you decide to add an optimization you've read about in Hacker News, detailing how a node.js program got a 10x speedup. You modify your delete method accordingly:
+
+``` ruby &quot;Set Tests&quot; https://gist.github.com/dodecaphonic/9934064#file-set_test-rb
+  # ...
+  def delete(v)
+    ls  = storage
+    tmp = DumbSet.new
+
+    while !ls.empty?
+      if (ls.head != v) &amp;amp;&amp;amp; (ls.head &amp;lt; 1500) # secret performance trick
+        tmp = tmp &amp;lt;&amp;lt; ls.head
+      end
+
+      ls = ls.tail
+    end
+
+    tmp
+  end
+  # ...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;CI still reports all green.&lt;/p&gt;
+
+&lt;p&gt;A few days later, you receive a report from a User telling she deleted their Pokémon with power level 3, but her Pokémons with levels 4013, 1551 and 20000 disappeared. Your first line of defense — your tests — have not caught any issues. Sweating bullets and drowning in emails from stakeholders and other Pokémon fiends, you’re about to collapse.&lt;/p&gt;
+
+&lt;p&gt;And then you remember: what about trying to express a property to see if it holds?&lt;/p&gt;
+
+&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;c1&quot;&gt;# We'll add at most 10 unique items and then delete the first&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;# 2. If there's anything wrong, this will blow up.&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;test_delete_property&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;array&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;uniq&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;check&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;values&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;os&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;values&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;inject&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;DumbSet&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;new&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;ds&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;values&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;inject&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;os&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;delete&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;assert_equal&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;values&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;size&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ds&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to_a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;size&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;You run it and it explodes:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ bundle exec ruby set_test.rb
+Run options: --seed 46455
+
+# Running:
+
+
+..........
+success: 100 tests
+..
+failure: 0 tests, on:
+[384, 437, 120, 718, 1850, 4579, 3178, 4191, 533, 2669]
+F
+..........
+success: 100 tests
+...
+
+Finished in 0.093858s, 63.9264 runs/s, 2248.0769 assertions/s.
+
+  1) Failure:
+DumbSetTest#test_delete_property [set_test.rb:69]:
+Expected: 8
+  Actual: 2
+
+6 runs, 211 assertions, 1 failures, 0 errors, 0 skips
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;What? How come you’ve only got 2 when you expected 8? Well, there must be something wrong with delete, after all. Let’s take that array and try it on an &lt;em&gt;pry&lt;/em&gt; session to see what happens:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[1] pry(main)&amp;gt; values = [384, 437, 120, 718, 1850, 4579, 3178, 4191, 533, 2669]
+=&amp;gt; [384, 437, 120, 718, 1850, 4579, 3178, 4191, 533, 2669]
+[2] pry(main)&amp;gt; os = values.inject(DumbSet.new) { |s, v| s &amp;lt;&amp;lt; v }
+=&amp;gt; #&amp;lt;DumbSet...&amp;gt;
+[3] pry(main)&amp;gt; values[0..1].inject(os) { |s, v| s.delete(v) }.to_a
+=&amp;gt; [718, 533]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Wait a minute! Should delete also remove everything that’s over 1000-ish? Is there anything in the code that stipulates such a thing? Maybe that node.js optimization was not so great after all. Let’s remove it and run the tests:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ bundle exec ruby set_test.rb
+Run options: --seed 2727
+
+# Running:
+
+.
+..........
+success: 100 tests
+..
+..........
+success: 100 tests
+.
+..........
+success: 100 tests
+..
+
+Finished in 0.099329s, 60.4053 runs/s, 3120.9415 assertions/s.
+
+6 runs, 310 assertions, 0 failures, 0 errors, 0 skips
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Voilà: properties have saved the day, and you’ve learned not to trust Hacker News bravado ever again.&lt;/p&gt;
+
+&lt;h2 id=&quot;is-using-rantly-the-same-as-using-quickcheck-or-scalacheck&quot;&gt;Is using Rantly the same as using QuickCheck or ScalaCheck?&lt;/h2&gt;
+
+&lt;p&gt;Sort of. For one, you have to write your own generators every time you want something other than basic types, while both QuickCheck and ScalaCheck can figure out a lot by themselves. This can make expressing what you mean a lot easier, and you don’t spend time debugging your &lt;code&gt;property&lt;/code&gt; blocks in search of mistakes. That said, writing a generator for your own types requires only that you instantiate them in the &lt;code&gt;property&lt;/code&gt; blocks with other auto-generated values.&lt;/p&gt;
+
+&lt;p&gt;Shrinking is not as good in Rantly. It works ok a lot of the time, but it could be improved. On the surface, from skimming the algorithms used in ScalaCheck and Rantly, it doesn’t &lt;em&gt;seem&lt;/em&gt; that different, but over that side of the line the patterns in minimization seem easier to spot.&lt;/p&gt;
+
+&lt;p&gt;There’s also no mechanism to test stateful code. ScalaCheck has &lt;a href=&quot;https://github.com/rickynils/scalacheck/wiki/User-Guide#stateful-testing&quot;&gt;Commands&lt;/a&gt; to help in modeling state changes, and I’m aware &lt;a href=&quot;https://github.com/manopapad/proper&quot;&gt;PropEr&lt;/a&gt; and &lt;a href=&quot;http://www.quviq.com/&quot;&gt;QuickCheck for Erlang&lt;/a&gt; also provide something in that direction.&lt;/p&gt;
+
+&lt;p&gt;One minor thing is that integration with RSpec and MiniTest could be improved. Its output pollutes the test run, and on large suites it becomes hard to know the relationship between a failed property and a failed test. It should be easy to fix for anyone motivated. On that note, there’s no ready-made extension for MiniTest (although adding one is trivial enough that I’m sending a PR to fix it).&lt;/p&gt;
+
+&lt;h2 id=&quot;final-considerations&quot;&gt;Final considerations&lt;/h2&gt;
+
+&lt;p&gt;I hope I have proven, even if with a craptastic example, that property-testing can aid you in writing better Ruby code. Our community is great when it comes to using tests both as a design and as a verification tool, and QuickCheck (via Rantly) is a new way of thinking about them. You should keep your TDD/BDD to carve out your objects and responsibilities, but also add property checks where suitable to strengthen your confidence in the system.&lt;/p&gt;</content><author><name></name></author><category term="ruby" /><category term="fp" /><category term="quickcheck" /><category term="testing" /><category term="haskell" /><category term="scala" /><summary type="html">For the past year or so I have slowly been dipping my feet into the vast functional programming seas. From taking the awesome Coursera offerings from Typesafe to slowly working through Rúnar Bjarnason’s and Paul Chiusano’s Functional Programming in Scala, my mind has been expanding proportionally to the time I dedicate to learning its ways. It has been incredibly rewarding and humbling.</summary></entry><entry><title type="html">(PT-BR) Palestra sobre Celluloid no RubyOnRio</title><link href="http://localhost:4000/blog/2014/03/21/pt-br-palestra-sobre-celluloid-no-rubyonrio/" rel="alternate" type="text/html" title="(PT-BR) Palestra sobre Celluloid no RubyOnRio" /><published>2014-03-21T16:10:00-03:00</published><updated>2014-03-21T16:10:00-03:00</updated><id>http://localhost:4000/blog/2014/03/21/pt-br-palestra-sobre-celluloid-no-rubyonrio</id><content type="html" xml:base="http://localhost:4000/blog/2014/03/21/pt-br-palestra-sobre-celluloid-no-rubyonrio/">&lt;p&gt;No dia 15 de março de 2014, aproveitei o encontro do &lt;a href=&quot;http://rubyonrio.org&quot;&gt;RubyOnRio&lt;/a&gt; para falar sobre &lt;a href=&quot;https://github.com/celluloid/celluloid&quot;&gt;Celluloid&lt;/a&gt;, uma implementação do Actor Model para Ruby. Como programação reativa, concorrência, paralelismo e quetais têm ocupado minha mente nos últimos meses, achei por bem conversar com o pessoal sobre como isso é relevante para o futuro do desenvolvimento de software e para o Ruby em si, constantemente sob ameaça (se Hacker News for parâmetro) de ser soterrado por uma tecnologia mais antenada com os novos tempos.&lt;/p&gt;
+
+&lt;script async=&quot;&quot; class=&quot;speakerdeck-embed&quot; data-id=&quot;7acca2a0935901315c4a3abe98d15494&quot; data-ratio=&quot;1.34031413612565&quot; src=&quot;//speakerdeck.com/assets/embed.js&quot;&gt;&lt;/script&gt;
+
+&lt;p&gt;A ideia da minha apresentação foi dar uma pincelada nos problemas clássicos de threading, explicar &lt;em&gt;en passant&lt;/em&gt; as ideias do Actor Model, e por fim encerrar na aplicação disso dentro do Celluloid. Claro que há informações vitais que ficaram de fora, que a superficialidade pode ser criticada, que o palestrante é meio capenga, mas espero que no cômputo geral o resultado tenha agradado.&lt;/p&gt;
+
+&lt;iframe width=&quot;560&quot; height=&quot;315&quot; src=&quot;//www.youtube.com/embed/0t0BlDdWQQY&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
+&lt;iframe width=&quot;560&quot; height=&quot;315&quot; src=&quot;//www.youtube.com/embed/_y6KbkqklkQ&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
+
+&lt;p&gt;Por fim apresentei um projetinho que fiz especialmente para o encontro, o &lt;a href=&quot;https://github.com/dodecaphonic/balladina-ruby&quot;&gt;Balladina&lt;/a&gt;. Foi divertido fazê-lo, e aprendi bastante coisa sobre o Celluloid no processo. Pude também contrastar algumas coisas com a parca experiência que tive com o Akka no &lt;a href=&quot;/blog/2014/01/12/reactive/&quot;&gt;curso do Coursera&lt;/a&gt;, e a maturidade do Celluloid relativa à do Akka me deixou esperançoso de um futuro bacana no Ruby. Vamos torcer pelo melhor.&lt;/p&gt;</content><author><name></name></author><category term="ruby" /><category term="celluloid" /><category term="actors" /><category term="akka" /><category term="erlang" /><summary type="html">No dia 15 de março de 2014, aproveitei o encontro do RubyOnRio para falar sobre Celluloid, uma implementação do Actor Model para Ruby. Como programação reativa, concorrência, paralelismo e quetais têm ocupado minha mente nos últimos meses, achei por bem conversar com o pessoal sobre como isso é relevante para o futuro do desenvolvimento de software e para o Ruby em si, constantemente sob ameaça (se Hacker News for parâmetro) de ser soterrado por uma tecnologia mais antenada com os novos tempos.</summary></entry><entry><title type="html">WebSockets in Ruby</title><link href="http://localhost:4000/blog/2014/02/26/websocket-webmachine/" rel="alternate" type="text/html" title="WebSockets in Ruby" /><published>2014-02-26T09:03:00-03:00</published><updated>2014-02-26T09:03:00-03:00</updated><id>http://localhost:4000/blog/2014/02/26/websocket-webmachine</id><content type="html" xml:base="http://localhost:4000/blog/2014/02/26/websocket-webmachine/">&lt;p&gt;At my main job, we have a large datastructure that takes considerable CPU time to be built, but remains unchanged thereafter. Its job is to geocode positions to and from a local reference system, which in turn provides us the ability to pin records, for instance, to a place on a Road, and know to which coordinate pair a local reference would correspond.&lt;/p&gt;
+
+&lt;p&gt;For the first pass, I built the Ruby library for the geocoding and a simple (Sinatra-based) webservice. This worked fine for a while until the Client required that &lt;strong&gt;every&lt;/strong&gt; mouse move performed a conversion. Said change, prompted me to build the same geocoding infrastructure again in JavaScript, and all were happy for a while.&lt;/p&gt;
+
+&lt;p&gt;As it usually goes, a new decision was made to support multiple Roads per User. Now, a download of 800KB of data (stored in an IndexedDB for later sessions) was tolerable; potentially multiple megabytes would be deadly, even if the software could be used before that constant feedback of conversions was given — it just became one of those features Users hold on to.&lt;/p&gt;
+
+&lt;p&gt;I knew that we had to go for a solution that kept that intact and made the whole thing manageable. I had dabbled in WebSockets before (with &lt;a href=&quot;http://nodejs.org&quot;&gt;node.js&lt;/a&gt; and &lt;a href=&quot;http://socket.io/&quot;&gt;Socket.IO&lt;/a&gt;) and kind of knew the lay of the land. Still, from previous searches, I was also aware there was a dearth of Ruby solutions, and for a moment considered going with my JavaScript port on node. The thought gave me shivers.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-contenders&quot;&gt;The contenders&lt;/h2&gt;
+
+&lt;p&gt;The first step was finding out what could be used. This is what I evaluated:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/simulacre/sinatra-websocket&quot;&gt;sinatra-websocket&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/faye/faye-websocket-ruby&quot;&gt;faye-websocket&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/websocket-rails/websocket-rails&quot;&gt;websocket-rails&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/ngauthier/tubesock&quot;&gt;tubesock&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/seancribbs/webmachine-ruby&quot;&gt;webmachine-ruby&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The first three are EventMachine-based; &lt;em&gt;tubesock&lt;/em&gt; uses &lt;a href=&quot;http://blog.phusion.nl/2013/01/23/the-new-rack-socket-hijacking-api/&quot;&gt;rack hijacking&lt;/a&gt;; &lt;em&gt;webmachine-ruby&lt;/em&gt; provides WebSockets via &lt;a href=&quot;https://github.com/celluloid/reel&quot;&gt;Reel&lt;/a&gt;, a Celluloid::IO-based HTTP server.&lt;/p&gt;
+
+&lt;p&gt;At first, considering I was already using Sinatra, I tried &lt;em&gt;sinatra-websocket&lt;/em&gt;. For some reason I just couldn’t get the connection to be upgraded to a WebSocket, and decided to move on quickly. &lt;em&gt;faye-websocket&lt;/em&gt; I just skipped, to be frank.&lt;/p&gt;
+
+&lt;p&gt;The next two suffered from the same problem: after booting Rails and loading the structure, I was left with only enough memory for a couple dozen or so clients on a small Heroku dyno. Also, Rails’ boot time coupled with building the thing occasionally made Heroku think something had gone wrong, and often the process crashed before the service went up.&lt;/p&gt;
+
+&lt;p&gt;The only one left, if you’re counting, was &lt;em&gt;webmachine-ruby&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;webmachine-ruby&quot;&gt;webmachine-ruby&lt;/h2&gt;
+
+&lt;p&gt;Setting up was relatively easy. To ramp up, I first migrated the original HTTP-based service to its resource structure. It has more of an OO flair than both Rails and Sinatra, with the caveat that it provides a lot less (by design). The dispatcher is easy to understand, and I quite enjoyed toying with the &lt;a href=&quot;https://github.com/seancribbs/webmachine-ruby#visual-debugger&quot;&gt;visual debugger&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Moving to a WebSocket, however, changes everything. As far as I can tell (and the documentation specifies) you completely skip over the regular infrastructure by providing a &lt;em&gt;callable&lt;/em&gt; to a configuration option, as such:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;App = Webmachine::Application do |app|
+  app.configure do |config|
+    config.adapter = :Reel
+    config.adapter_options[:websocket_handler] = proc do |websocket|
+      websocket &amp;lt;&amp;lt; &quot;hello, world&quot;
+    end
+  end
+end
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;That is pretty much what the docs say. Since it only expects the handler to respond to &lt;em&gt;#call&lt;/em&gt;, you can write your own &lt;em&gt;ad-hoc&lt;/em&gt; dispatcher:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class WebsocketHandler
+  def call(websocket)
+    message = websocket.read
+    # do something with the message, call methods on other objects, log stuff, have your fun
+  end
+end
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;What the docs don’t address are some basics of sockets programming. If you see your handler hang and never respond again, requiring you to restart, don’t fret: you just have to provide a loop to read from the the socket and let Celluloid::IO do its non-blocking magic:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class WebsocketHandler
+  def call(websocket)
+    loop do
+      message = websocket.read
+      # do something with the message, call methods on other objects, log stuff, have your fun
+    end
+  end
+end
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Don’t worry: your CPU won’t be pegged at 100%, because non-blocking. You’ll be subjected, however, to the same limitations node has regarding CPU usage and its event handlers (i.e. if you are CPU-intensive, you’ll affect throughput).&lt;/p&gt;
+
+&lt;p&gt;Luckily, we have threads in Ruby. I decided to take advantage of that by assigning each client to a Celluloid Actor, which allows me to provide some of the CPU-intensive operations without compromising (at least not heavily) other Users. It has been working fine so far.&lt;/p&gt;
+
+&lt;h2 id=&quot;whats-missing&quot;&gt;What’s missing&lt;/h2&gt;
+
+&lt;p&gt;My solution doesn’t take into account non-WebSocket clients, but it should. &lt;em&gt;webmachine-ruby&lt;/em&gt; makes it easy by allowing you to implement streaming APIs without much trouble, and I suppose it’ll only take a bit of JS to fallback from one to the other and provide an abstract connection to consumers.&lt;/p&gt;
+
+&lt;p&gt;The documentation also doesn’t go over all the events that can happen on the socket (&lt;em&gt;onerror&lt;/em&gt;, &lt;em&gt;onclose&lt;/em&gt;, &lt;em&gt;onopen&lt;/em&gt;, &lt;em&gt;onmessage&lt;/em&gt;). You can see them as methods on the socket, each taking a block, but for my use case I just let the actor crash and be done with it. If I’m missing some cleanup, please let me know.&lt;/p&gt;
+
+&lt;p&gt;This architecture also doesn’t provide a ready-baked pub/sub system, with channels and message brokers. If that’s more in the spirit of what you need, check out &lt;a href=&quot;http://faye.jcoglan.com/&quot;&gt;faye&lt;/a&gt; and &lt;a href=&quot;https://github.com/websocket-rails/websocket-rails&quot;&gt;websocket-rails&lt;/a&gt;.&lt;/p&gt;</content><author><name></name></author><category term="ruby" /><category term="websockets" /><category term="rails" /><category term="web" /><category term="celluloid" /><category term="webmachine-ruby" /><summary type="html">At my main job, we have a large datastructure that takes considerable CPU time to be built, but remains unchanged thereafter. Its job is to geocode positions to and from a local reference system, which in turn provides us the ability to pin records, for instance, to a place on a Road, and know to which coordinate pair a local reference would correspond.</summary></entry><entry><title type="html">“Principles of Reactive Programming”, a review</title><link href="http://localhost:4000/blog/2014/01/12/reactive/" rel="alternate" type="text/html" title="&quot;Principles of Reactive Programming&quot;, a review" /><published>2014-01-12T13:15:00-02:00</published><updated>2014-01-12T13:15:00-02:00</updated><id>http://localhost:4000/blog/2014/01/12/reactive</id><content type="html" xml:base="http://localhost:4000/blog/2014/01/12/reactive/">&lt;p&gt;After the positive experience learning some Scala and some functional patterns in &lt;a href=&quot;https://www.coursera.org/course/progfun&quot;&gt;Functional Programming Principles in Scala&lt;/a&gt;, I was excited to undertake the new course from Martin Odersky and co. The fact that it would pick up from where it left off and build on the &lt;a href=&quot;http://www.reactivemanifesto.org/&quot;&gt;Reactive brouhaha&lt;/a&gt; was icing in the cake; after all, the techniques and technologies approached in the lectures highlight some of what Scala does best.&lt;/p&gt;
+
+&lt;h2 id=&quot;structure&quot;&gt;Structure&lt;/h2&gt;
+
+&lt;p&gt;It starts with mr. Odersky’s already familiar style, reviewing some of what was taught in the previous course and expanding on some topics. The dreaded Monads were dealt with, and while I can’t talk about the subject from a theoretical standpoint or offer a perfect explanation, I feel I grasp how they can be used to compose behavior and express functionality better.&lt;/p&gt;
+
+&lt;p&gt;The second part was the highlight, for me. Erik Meijer (from LINQ and Reactive Extensions fame on the .NET land) has an incredibly upbeat energy and great sense of humor, which carry you like a breeze through the amazing concepts he expresses. I loved thinking about Event streams and how to compose them using monadic combinators in the form of &lt;code&gt;Observables&lt;/code&gt; (alongside &lt;code&gt;Subscriptions&lt;/code&gt;, &lt;code&gt;Schedulers&lt;/code&gt;, &lt;code&gt;Promises&lt;/code&gt; and &lt;code&gt;Futures&lt;/code&gt;). I think this affected me the most, for I could clearly see how to mix and match things to add behavior.&lt;/p&gt;
+
+&lt;p&gt;The third part was also very good. Roland Kuhn (Akka’s tech lead) has a soft-spoken style that relaxes you while he lays the groundwork over which you’ll learn about Actors, building distributed systems and dealing with failure in that model. He also shows piece by piece what &lt;a href=&quot;http://akka.io&quot;&gt;Akka&lt;/a&gt; can do (which led me to explore more of &lt;a href=&quot;https://github.com/celluloid/celluloid&quot;&gt;Celluloid&lt;/a&gt;, a topic for a future post).&lt;/p&gt;
+
+&lt;h2 id=&quot;exercises&quot;&gt;Exercises&lt;/h2&gt;
+
+&lt;p&gt;Everything comes together with each week’s exercises. The first was a quick-and-simple one that explores &lt;a href=&quot;http://www.scalacheck.org/&quot;&gt;property testing&lt;/a&gt;. I went through it quickly, but I still find it hard to apply that mode of thinking, and didn’t get much out of the technique later on. I know this is a personal limitation, as some people in the course forums mentioned using it to great effect.&lt;/p&gt;
+
+&lt;p&gt;After that, you get a wake-up call that this is gonna require some hard work right as you’re asked to build two simulations: one of circuits, with emphasis on building a demultiplexer, and one of an epidemy. The fact that this involves timing and sequencing makes you think about state and purely functional programs. Building something substantial (and fun to watch) gives you an appreciation of their usefulness.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://dl.dropboxusercontent.com/s/ml6pp98zwfufbob/2014-01-12%20at%2014.52.png&quot; alt=&quot;Epidemy simulation&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Erik Meijer’s had cool, practical examples: you build a node-style web server (with a Reactor loop) in the first week and a Wikipedia Swing client using reactive streams for GUI events and networking in the second. It makes you want to write everything in this style, because it becomes much easier to think about &lt;em&gt;what&lt;/em&gt; happens &lt;em&gt;when&lt;/em&gt; with &lt;em&gt;whom&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;The third section, on Akka, takes the prize in this area: first you redo the binary search tree exercise from the first course using Actors, which I found a great idea, as you’re confronted just with the new concepts. Then you are challenged into building a (simplified) distributed key-value store, including replication and joining of new nodes. Describing this exercise to colleagues made them want to take the course. I hope they do.&lt;/p&gt;
+
+&lt;h2 id=&quot;scala&quot;&gt;Scala&lt;/h2&gt;
+
+&lt;p&gt;Being forced to use more Scala made my interest in it grow more and more. &lt;a href=&quot;https://al3x.net/&quot;&gt;Alex Payne&lt;/a&gt; has said that it feels a bit like Ruby in its expressiveness, and I got that while building the exercises. I confess it is refreshing and enlightening to use types as a way of reasoning, and not as something that just soothes a compiler with a frail ego.&lt;/p&gt;
+
+&lt;p&gt;On the other hand, tooling was problematic. Being an Emacs user, I try to keep in it at all times, and surprisingly (coupled with &lt;a href=&quot;https://github.com/aemoncannon/ensime&quot;&gt;ENSIME&lt;/a&gt;) the experience was not bad. Still I tried to take the opportunity to learn a little bit more about what is offered and how well it works, and the experience was not so great. Importing the provided Eclipse projects sometimes resulted in missing dependencies; importing the sbt project in IntelliJ IDEA resulted in error messages complaining about the TEST context, which some of the students claimed could be solved with nightly builds of its Scala and SBT plugins.&lt;/p&gt;
+
+&lt;p&gt;In ENSIME it mostly worked fine. Sometimes I needed to run the tests before generating the project in &lt;code&gt;sbt&lt;/code&gt;, or to regenerate the project as I fleshed out the code. This was not that that awful, in the end: coming from a world of no static types, no code completion, poor navigation (seriously, guys, I’ve used dynamic languages for over 15 years, and grep/ack/ag is not a good replacement) and pretty crude automatic refactorings, it felt like I was thrown into a better world. I find myself missing it in my daily Ruby dealings.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://dl.dropboxusercontent.com/s/c0ce5j0jlknn90r/2014-01-12%20at%2014.47.png&quot; alt=&quot;ENSIME as I worked through the exercises&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;I realize the situation with Eclipse and IntelliJ may be specific to the course, as the canonical thing to use was sbt. However, being that sbt is the canonical build tool, period, it made the experience messy, and complaints in the forum suggest there’s still a lot to improve here. We developers are used these sorts of hurdles (and, let’s be frank, to learning workarounds), but this is the type of thing that turns off someone that is not yet invested in the tech.&lt;/p&gt;
+
+&lt;h2 id=&quot;what-i-learned-about-myself&quot;&gt;What I learned about myself&lt;/h2&gt;
+
+&lt;p&gt;Comparing my approach to my fellow students’, I found I could go through most things relatively easily, based on experience alone, but that eventually I had to exercise muscles in areas I consider mostly weak: self-reliance and grit. It was necessary to overcome my impulse to procrastinate when facing a roadblock, and also to not feel guilty about going to the forums, reading about other people’s struggles or using a test suite that some kind soul provided for everyone else.&lt;/p&gt;
+
+&lt;p&gt;To face things that are known but empirically unexplored made me question my ability, and demanded a hard look at my self-image. It took great care and some pain to keep motivated and think of the outcome. The sense of pride from having completed this without delaying a single exercise makes me believe I can accomplish more. Furthermore, getting a near-perfect score for the effort is very sweet.&lt;/p&gt;
+
+&lt;p&gt;I hope this helps me become a little more patient. My instinct is to go for quick intellectual gratification, for tight feedback loops, and that is not always possible (or even desirable). Standing on the shoulder of giants requires a climb; I must remember not be discouraged after the first stretch.&lt;/p&gt;
+
+&lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h2&gt;
+
+&lt;p&gt;I recommend everyone to go through this course. It is challenging, rewarding and (for me) a good source of personal growth. Scala is very interesting, and worthy of your time, and Akka is incredible. I found the different teaching styles refreshing, a great way to keep the learner engaged. All in all, a delightful experience.&lt;/p&gt;</content><author><name></name></author><category term="scala" /><category term="akka" /><category term="actors" /><category term="reactive" /><summary type="html">After the positive experience learning some Scala and some functional patterns in Functional Programming Principles in Scala, I was excited to undertake the new course from Martin Odersky and co. The fact that it would pick up from where it left off and build on the Reactive brouhaha was icing in the cake; after all, the techniques and technologies approached in the lectures highlight some of what Scala does best.</summary></entry><entry><title type="html">“REMOTE”, by 37signals — ★★☆☆☆</title><link href="http://localhost:4000/blog/2013/11/15/remote/" rel="alternate" type="text/html" title="&quot;REMOTE&quot;, by 37signals — ★★☆☆☆" /><published>2013-11-15T11:52:00-02:00</published><updated>2013-11-15T11:52:00-02:00</updated><id>http://localhost:4000/blog/2013/11/15/remote</id><content type="html" xml:base="http://localhost:4000/blog/2013/11/15/remote/">&lt;p&gt;&lt;a href=&quot;http://37signals.com/remote/&quot;&gt;
+  &lt;img src=&quot;http://37signals.com/images/remote/remote_front.png&quot; width=&quot;400&quot; height=&quot;600&quot; title=&quot;REMOTE - by Jason Fried and DHH&quot; style=&quot;float: left;&quot; /&gt;
+&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;As a remote worker myself, I nodded my head frequently at the advantages and challenges presented, so the rating’s not about a fundamental disagreement with the message or the intentions. Like the authors, I know from personal experience that commuting, facing a strict set of working hours, interruptions and living with the expectation of availability from others are some of the greatest dangers to productive work (creative work especially).&lt;/p&gt;
+
+&lt;p&gt;I did, however, expect more than short chapters and sparse data points. Maybe it’s the programmer in me misunderstanding the whole “business book” thing, but perhaps the arguments would hold more weight if they were more than anedoctal. They render the whole thing as an account of what works for 37signals — a very small and relatively unknown company in the greater scheme of things. I understand that relying on managers and employers to be swayed by arguments from authority is antithetical to the book (the thesis being that remote work is a &lt;em&gt;rationally&lt;/em&gt; better decision overall), but we cannot underestimate how many small-to-medium companies manage by emulation. Maybe stronger data and clearer research could counter gut reactions better.&lt;/p&gt;
+
+&lt;p&gt;I think this might be good if you need just a little push to go after this, if you’re a bit on the fence and already considering/thinking this is a trend that should be studied and followed. If you want something to challenge your views with great insights, don’t bother: it’s fluffy and humane and beautifully illustrated, but you’re probably going to leave the book mostly unchallenged.&lt;/p&gt;</content><author><name></name></author><category term="business" /><category term="remote" /><category term="book" /><summary type="html"></summary></entry></feed>

@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Property-based testing in Ruby | Troika Tech</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="Property-based testing in Ruby" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="For the past year or so I have slowly been dipping my feet into the vast functional programming seas. From taking the awesome Coursera offerings from Typesafe to slowly working through Rúnar Bjarnason’s and Paul Chiusano’s Functional Programming in Scala, my mind has been expanding proportionally to the time I dedicate to learning its ways. It has been incredibly rewarding and humbling." />
+<meta property="og:description" content="For the past year or so I have slowly been dipping my feet into the vast functional programming seas. From taking the awesome Coursera offerings from Typesafe to slowly working through Rúnar Bjarnason’s and Paul Chiusano’s Functional Programming in Scala, my mind has been expanding proportionally to the time I dedicate to learning its ways. It has been incredibly rewarding and humbling." />
+<link rel="canonical" href="http://localhost:4000/blog/2014/04/02/property-based-testing-in-ruby/" />
+<meta property="og:url" content="http://localhost:4000/blog/2014/04/02/property-based-testing-in-ruby/" />
+<meta property="og:site_name" content="Troika Tech" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2014-04-02T10:32:00-03:00" />
+<script type="application/ld+json">
+{"description":"For the past year or so I have slowly been dipping my feet into the vast functional programming seas. From taking the awesome Coursera offerings from Typesafe to slowly working through Rúnar Bjarnason’s and Paul Chiusano’s Functional Programming in Scala, my mind has been expanding proportionally to the time I dedicate to learning its ways. It has been incredibly rewarding and humbling.","headline":"Property-based testing in Ruby","dateModified":"2014-04-02T10:32:00-03:00","datePublished":"2014-04-02T10:32:00-03:00","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/blog/2014/04/02/property-based-testing-in-ruby/"},"url":"http://localhost:4000/blog/2014/04/02/property-based-testing-in-ruby/","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Troika Tech" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Troika Tech</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Property-based testing in Ruby</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2014-04-02T10:32:00-03:00" itemprop="datePublished">Apr 2, 2014
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>For the past year or so I have slowly been dipping my feet into the vast functional programming seas. From taking the awesome <a href="http://coursera.org">Coursera</a> <a href="https://www.coursera.org/course/progfun">offerings</a> <a href="https://www.coursera.org/course/reactive">from Typesafe</a> to slowly working through Rúnar Bjarnason’s and Paul Chiusano’s <em><a href="http://www.manning.com/bjarnason/">Functional Programming in Scala</a></em>, my mind has been expanding proportionally to the time I dedicate to learning its ways. It has been incredibly rewarding and humbling.</p>
+
+<p>One such reward has been coming into direct touch with property-based testing. This technique, first developed by <a href="http://en.wikipedia.org/wiki/QuickCheck">QuickCheck</a> in Haskell-land, spins automated testing on its head: instead of codifying what is proper behavior by asserting that the outputs for given inputs match what is expected, the tester establishes logical properties about what should happen and lets the tool generate loads of inputs to check if they hold. If something goes wrong, the tool will then try to find the smallest test input that breaks the property (<em>falsifies</em> it), a process called <em>shrinking</em>; if it can’t find anything, you can sigh with relief and think about what to scrutinize next.</p>
+
+<p>Having a QuickCheck-like tool at your disposal can be incredibly powerful. The more complex the software or the algorithm, the greater the likelihood of your carefully curated unit and integration tests having blind spots. <a href="http://basho.com">Basho</a>, for instance, <a href="http://basho.com/quickchecking-poolboy-for-fun-and-profit/">have written about the stark realization that their worker pool library was full of subtle bugs by using QuickCheck for Erlang</a>, and you can find <a href="http://www.quviq.com/documents/erlang001-arts.pdf">other</a> <a href="http://www.autosar.org/download/conferencedocs11/12_AUTOSAR_ModelBased_Quviq.pdf">instances</a> of how the technique helped make better software.</p>
+
+<p>I don’t know about you, but when I come in contact with stuff like that I immediately think of how improved parts of my day job would be if I just could apply it. Considering that my daily duties are conducted in Ruby, I felt it was time I explored the subject in that realm.</p>
+
+<h2 id="a-contrived-setup-that-hopefully-shows-how-it-can-work-out">A contrived setup that hopefully shows how it can work out</h2>
+
+<p>Let’s say we’ve decided to implement our own linked list class in Ruby. We would probably start our implementation with something like this:</p>
+
+<p>``` ruby “List” https://gist.github.com/dodecaphonic/9934064#file-list-rb
+require “singleton”</p>
+
+<p>class Nil
+  include Singleton</p>
+
+<p>def empty?; true; end</p>
+
+<p>def to_s
+    “Nil”
+  end
+end</p>
+
+<p>class Cons
+  def initialize(head, tail = Nil.instance)
+    @head = head
+    @tail = tail
+  end</p>
+
+<p>attr_reader :head, :tail</p>
+
+<p>def empty?; false; end</p>
+
+<p>def to_s
+    “(#{head} . #{tail.to_s})”
+  end
+end</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+Using that _very_ convenient API, we can build lists:
+
+``` ruby
+&gt;&gt; l = Cons.new(1, Cons.new(2, Cons.new(3, Nil.instance)))
+&gt;&gt; l.to_s # =&gt; "(1 . (2 . (3 . Nil)))"
+</code></pre></div></div>
+
+<p>We know that, in a linked list, adding to the head is O(1), while appending to the end is O(n). So we build algorithms that respect its efficiency guarantees. However, when we, say, map this list into another list, it results in the following situation:</p>
+
+<p>``` ruby “List” https://gist.github.com/dodecaphonic/9934064#file-list-rb
+def do_something_amazing(list, acc = Nil.instance)
+  super_value = list.head * 1337
+  if list.tail.empty?
+    acc
+  else
+    do_something_amazing(list.tail, List.new(super_value, acc))
+  end
+end</p>
+
+<blockquote>
+  <blockquote>
+    <p>do_something(l).to_s # =&gt; “(4011 . (2674 . (1337 . Nil)))”
+```</p>
+  </blockquote>
+</blockquote>
+
+<p>Processing things from head to tail means the list ends up reversed. It’s common, then, to reverse it back when we’re done processing, to preserve the order an external user would expect. Let’s add a <code>reverse</code> method to a <code>List</code> helper module:</p>
+
+<p>``` ruby “List” https://gist.github.com/dodecaphonic/9934064#file-list-rb
+module List
+  def self.reverse(list, acc = Nil.instance)
+    if list.empty?
+      acc
+    else
+      reverse(list.tail, Cons.new(list.head, acc))
+    end
+  end
+end</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+So when we try to reverse what was created in &lt;code&gt;do_something_amazing&lt;/code&gt;, we get what we need:
+
+``` ruby
+List.reverse(do_something_amazing(l)).to_s # =&gt; "(1337 . (2674 . (4011 . Nil)))"
+</code></pre></div></div>
+
+<p>Awesome. I think this is enough for us to start exploring properties. If you’re getting bored, take a sip of coffee and come back when you’re ready. There’s a few cool tricks below the fold.</p>
+
+<h2 id="testing-the-old-way">Testing the old way</h2>
+
+<p>Being the good developers we are, we are covering that code with tests:</p>
+
+<p>``` ruby “List Tests” https://gist.github.com/dodecaphonic/9934064#file-list_test-rb
+class ListTest &lt; MiniTest::Test
+  def test_reversing_lists
+    assert_equal “(3 . (2 . (1 . Nil)))”,
+      List.reverse(Cons.new(1, Cons.new(2, Cons.new(3)))).to_s
+    assert_equal “(9 . (400 . (321 . (1 . (10 . Nil)))))”,
+      List.reverse(Cons.new(10, Cons.new(1, Cons.new(321, Cons.new(400, Cons.new(9)))))).to_s
+    assert_equal “Nil”, List.reverse(Nil.instance).to_s
+    assert_equal “(1 . Nil)”, List.reverse(Cons.new(1)).to_s
+  end
+end</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+We're pretty confident that's enough, even if it was kind of boring to do manually. That amount of testing would let us go home and sleep soundly.
+
+## Testing the QuickCheck way
+
+First, we'll need something like QuickCheck in Ruby. The best, most idiomatic, most maintained, least-Monad-y thing I have found is [Rantly][rantly]. It has both primitive value generation built-in and property testing with shrinking. We'll skip over the basic API and go straight to defining a property to check if my algorithm is really bullet-proof. To aid in the creation of lists from Arrays, we'll add a new helper:
+
+``` ruby "List" https://gist.github.com/dodecaphonic/9934064#file-list-rb
+module List
+  # ...
+  def self.from_values(*values)
+    values.reverse.inject(Nil.instance) { |ls, v| Cons.new(v, ls) }
+  end
+end
+</code></pre></div></div>
+
+<p>To check that it works, let’s change the existing tests and see if they still pass:</p>
+
+<p>``` ruby “List Tests” https://gist.github.com/dodecaphonic/9934064#file-list_test-rb
+class ListTest &lt; MiniTest::Test
+  def test_reversing_lists
+    assert_equal “(3 . (2 . (1 . Nil)))”,
+      List.reverse(List.from_values(1, 2, 3)).to_s
+    assert_equal “(9 . (400 . (321 . (1 . (10 . Nil)))))”,
+      List.reverse(List.from_values(10, 1, 321, 400, 9)).to_s
+    assert_equal “Nil”, List.reverse(Nil.instance).to_s
+    assert_equal “(1 . Nil)”, List.reverse(List.from_values(1)).to_s
+  end
+end</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+</code></pre></div></div>
+<p>Run options: –seed 48889</p>
+
+<h1 id="running">Running:</h1>
+
+<p>.</p>
+
+<p>Finished in 0.001256s, 796.1783 runs/s, 3184.7134 assertions/s.</p>
+
+<p>1 runs, 4 assertions, 0 failures, 0 errors, 0 skips</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+Great. Now to the newfangled thing. As I mentioned before, writing a property to check requires us to think differently than we would with regular unit tests. Your formulation should state something logical, something that does not rely on specific inputs. Following that guideline, we can reason about reversing lists in the following manner:
+
+``` ruby "List Tests" https://gist.github.com/dodecaphonic/9934064#file-list2_test-rb
+  # ...
+  def test_reversing_by_property
+    property {
+      length = range(0, 1_000_000)
+      List.from_values(array(length) { integer })
+    }.check { |list|
+      assert_equal list.to_s, List.reverse(List.reverse(list)).to_s
+    }
+  end
+  # ...
+</code></pre></div></div>
+
+<p>The meat is in the <code>check</code> block. Determining that a list has been reversed correctly requires us to check if reversing it again gets us back to the original list. To seed our check, we build a <code>property</code> block that creats an array with a random length between 0 and 1_000_000, itself filled with random integers. Let’s run the tests again:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ bundle exec ruby list.rb
+Run options: --seed 17130
+
+# Running:
+
+.
+..........
+success: 100 tests
+.
+
+Finished in 121.969127s, 0.0164 runs/s, 0.8527 assertions/s.
+
+2 runs, 104 assertions, 0 failures, 0 errors, 0 skips
+</code></pre></div></div>
+
+<p>It took a while (we wanted to be thorough, with those million-item arrays), but we’re pretty sure it works. I’m a believer and I’m stoked; when I look at you, however, I see a face that says “look, it’s cool and all, but isn’t it <em>kind of worthless</em>? The tests we had were telling us the same thing, and we only needed the power of our minds to generate the correct inputs. Why go through so much trouble?”</p>
+
+<p>Well, what about those times when ours minds fail us?</p>
+
+<h2 id="catching-a-bug-with-rantly">Catching a bug with Rantly</h2>
+
+<p>Let’s say you’re excited about building your own data structures and want to wrap that linked list inside a very inefficient Set. You mutter to yourself that you should make sure items are not inserted twice, which for now seems to be the main difference between Sets and Lists as storage containers.</p>
+
+<p>You build a little more structure into what you already have, adding a <code>prepend</code> method and inlining <code>reverse</code> into a <code>List</code> base class:</p>
+
+<p>```ruby “List 2” https://gist.github.com/dodecaphonic/9934064#file-list2-rb</p>
+
+<p>class List
+  def to_s
+    raise “Don’t use this directly, fool”
+  end</p>
+
+<p>def empty?; true; end</p>
+
+<p>def prepend(v)
+    Cons.new(v, self)
+  end</p>
+
+<p>def reverse(acc = Nil.instance)
+    if empty?
+      acc
+    else
+      tail.reverse(Cons.new(head, acc))
+    end
+  end</p>
+
+<p>def self.from_values(*values)
+    values.reverse.inject(Nil.instance) { |ls, v| Cons.new(v, ls) }
+  end<br />
+end</p>
+
+<p>class Nil &lt; List
+  include Singleton</p>
+
+<p>def to_s
+    “Nil”
+  end
+end</p>
+
+<p>class Cons &lt; List
+  def initialize(head, tail = Nil.instance)
+    @head = head
+    @tail = tail
+  end</p>
+
+<p>attr_reader :head, :tail</p>
+
+<p>def empty?; false; end</p>
+
+<p>def to_s
+    “(#{head} . #{tail.to_s})”
+  end
+end</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+To check if an item exists, you add a &lt;code&gt;contains?&lt;/code&gt; method:
+
+``` ruby "List with contains" https://gist.github.com/dodecaphonic/9934064#file-list2-rb
+class List
+  # ..
+  def contains?(v); false; end
+  # ..
+end
+
+class Cons &lt; List
+  # ..
+  def contains?(v)
+    head == v || tail.contains?(v)
+  end
+  # ..
+end
+</code></pre></div></div>
+
+<p>Then you write your immutable Set and matching tests:</p>
+
+<p>``` ruby “A dumb set implementation” https://gist.github.com/dodecaphonic/9934064#file-set-rb
+class DumbSet
+  def initialize(storage = Nil.instance)
+    @storage = storage
+  end</p>
+
+<p>attr_reader :storage
+  private     :storage</p>
+
+<p>def push(v)
+    if !storage.contains?(v)
+      DumbSet.new(storage.prepend(v))
+    else
+      self
+    end
+  end
+  alias_method :«, :push</p>
+
+<p>def contains?(v)
+    storage.contains?(v)
+  end</p>
+
+<p>def to_a
+    values = []
+    list   = storage
+    until list.empty?
+      values « list.head
+      list = list.tail
+    end
+    values
+  end
+end</p>
+
+<p>class DumbSetTest &lt; Minitest::Test
+  def setup
+    @s = (((DumbSet.new « 1) « 2) « 3)
+  end</p>
+
+<p>attr_reader :s</p>
+
+<p>def test_contains
+    assert s.contains?(3)
+    assert s.contains?(2)
+    assert s.contains?(1)
+    assert !s.contains?(4)
+  end</p>
+
+<p>def test_uniqueness
+    assert_equal [-32, 1, 2, 3], (s « -32 « -32 « -32).to_a.sort
+  end
+end</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+And because I spotted you writing new code and yelled "HEY USE RANTLY IT'S SO COOL YIPEE", you add some property tests:
+
+``` ruby 
+class DumbSetTest &lt; Minitest::Test
+  # ...
+def test_contains_property
+    property {
+      array(range(0, 100)) { integer }
+    }.check { |vs|
+      s = vs.inject(DumbSet.new) { |ds, v| ds &lt;&lt; v }
+      assert vs.all? { |v| s.contains?(v) }
+    }
+  end
+
+  def test_uniqueness_property
+    property {
+      array(range(0, 100)) { integer }
+    }.check { |vs|
+      ns = vs.inject(DumbSet.new) { |ds, v| ds &lt;&lt; v }
+      rs = vs.inject(ns) { |ds, v| ds &lt;&lt; v }
+      assert_equal vs.sort, ns.to_a.sort
+    }
+  end
+  # ...
+end  
+</code></pre></div></div>
+
+<p>It looks good:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ bundle exec ruby set_test.rb
+Run options: --seed 15625
+
+# Running:
+
+
+..........
+success: 100 tests
+..
+..........
+success: 100 tests
+..
+
+Finished in 0.119717s, 33.4121 runs/s, 1720.7247 assertions/s.
+
+4 runs, 206 assertions, 0 failures, 0 errors, 0 skips
+</code></pre></div></div>
+
+<p>You then implement the removal of items:</p>
+
+<p>``` ruby “Set with delete” https://gist.github.com/dodecaphonic/9934064#file-set-rb
+class DumbSet
+  # …
+  def delete(v)
+    ls = storage
+    ns = DumbSet.new</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>while !ls.empty?
+  if ls.head != v
+    ns = ns &lt;&lt; v
+  end
+
+  ls = ls.tail
+end
+
+ns   end   # ... end
+</code></pre></div></div>
+
+<p>class DumbSetTest &lt; Minitest::TestCase
+  # …
+  def test_delete
+    os = (((DumbSet.new « 1) « 2) « 3)
+    ns = os.delete(1337)
+    assert_equal [1, 2, 3], ns.to_a.sort
+    ns = os.delete(3)
+    assert_equal [1, 2], ns.to_a.sort
+    ns = ns.delete(2)
+    assert_equal [1], ns.to_a.sort
+    ns = (ns « 432).delete(1)
+    assert_equal [432], ns.to_a.sort
+    ns = ns.delete(432)
+    assert_equal [], ns.to_a.sort
+  end
+  # …
+end</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+Your tests pass, but this time you don't listen to me about adding another property. You're just not that convinced they're worth their salt, and it looks good enough to ship with all the tests you've added. The Pokémon Collecting app you work on can benefit from it right now, instead of 20 minutes from now. To production it goes.
+
+Time goes by, and you've forgotten about me and our little adventure. Your system is humming along and moved on to maintenance mode. Days have been kind of slow, so you decide to add an optimization you've read about in Hacker News, detailing how a node.js program got a 10x speedup. You modify your delete method accordingly:
+
+``` ruby "Set Tests" https://gist.github.com/dodecaphonic/9934064#file-set_test-rb
+  # ...
+  def delete(v)
+    ls  = storage
+    tmp = DumbSet.new
+
+    while !ls.empty?
+      if (ls.head != v) &amp;&amp; (ls.head &lt; 1500) # secret performance trick
+        tmp = tmp &lt;&lt; ls.head
+      end
+
+      ls = ls.tail
+    end
+
+    tmp
+  end
+  # ...
+</code></pre></div></div>
+
+<p>CI still reports all green.</p>
+
+<p>A few days later, you receive a report from a User telling she deleted their Pokémon with power level 3, but her Pokémons with levels 4013, 1551 and 20000 disappeared. Your first line of defense — your tests — have not caught any issues. Sweating bullets and drowning in emails from stakeholders and other Pokémon fiends, you’re about to collapse.</p>
+
+<p>And then you remember: what about trying to express a property to see if it holds?</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># We'll add at most 10 unique items and then delete the first</span>
+  <span class="c1"># 2. If there's anything wrong, this will blow up.</span>
+  <span class="k">def</span> <span class="nf">test_delete_property</span>
+    <span class="n">property</span> <span class="p">{</span>
+      <span class="n">array</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="p">{</span> <span class="n">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5000</span><span class="p">)</span> <span class="p">}.</span><span class="nf">uniq</span>
+    <span class="p">}.</span><span class="nf">check</span> <span class="p">{</span> <span class="o">|</span><span class="n">values</span><span class="o">|</span>
+      <span class="n">os</span> <span class="o">=</span> <span class="n">values</span><span class="p">.</span><span class="nf">inject</span><span class="p">(</span><span class="no">DumbSet</span><span class="p">.</span><span class="nf">new</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">s</span><span class="p">,</span> <span class="n">v</span><span class="o">|</span> <span class="n">s</span> <span class="o">&lt;&lt;</span> <span class="n">v</span> <span class="p">}</span>
+      <span class="n">ds</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="o">..</span><span class="mi">1</span><span class="p">].</span><span class="nf">inject</span><span class="p">(</span><span class="n">os</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">s</span><span class="p">,</span> <span class="n">v</span><span class="o">|</span> <span class="n">s</span><span class="p">.</span><span class="nf">delete</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="p">}</span>
+      <span class="n">assert_equal</span> <span class="p">(</span><span class="n">values</span><span class="p">.</span><span class="nf">size</span> <span class="o">-</span> <span class="mi">2</span><span class="p">),</span> <span class="n">ds</span><span class="p">.</span><span class="nf">to_a</span><span class="p">.</span><span class="nf">size</span>
+    <span class="p">}</span>
+  <span class="k">end</span>
+</code></pre></div></div>
+
+<p>You run it and it explodes:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ bundle exec ruby set_test.rb
+Run options: --seed 46455
+
+# Running:
+
+
+..........
+success: 100 tests
+..
+failure: 0 tests, on:
+[384, 437, 120, 718, 1850, 4579, 3178, 4191, 533, 2669]
+F
+..........
+success: 100 tests
+...
+
+Finished in 0.093858s, 63.9264 runs/s, 2248.0769 assertions/s.
+
+  1) Failure:
+DumbSetTest#test_delete_property [set_test.rb:69]:
+Expected: 8
+  Actual: 2
+
+6 runs, 211 assertions, 1 failures, 0 errors, 0 skips
+</code></pre></div></div>
+
+<p>What? How come you’ve only got 2 when you expected 8? Well, there must be something wrong with delete, after all. Let’s take that array and try it on an <em>pry</em> session to see what happens:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[1] pry(main)&gt; values = [384, 437, 120, 718, 1850, 4579, 3178, 4191, 533, 2669]
+=&gt; [384, 437, 120, 718, 1850, 4579, 3178, 4191, 533, 2669]
+[2] pry(main)&gt; os = values.inject(DumbSet.new) { |s, v| s &lt;&lt; v }
+=&gt; #&lt;DumbSet...&gt;
+[3] pry(main)&gt; values[0..1].inject(os) { |s, v| s.delete(v) }.to_a
+=&gt; [718, 533]
+</code></pre></div></div>
+
+<p>Wait a minute! Should delete also remove everything that’s over 1000-ish? Is there anything in the code that stipulates such a thing? Maybe that node.js optimization was not so great after all. Let’s remove it and run the tests:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ bundle exec ruby set_test.rb
+Run options: --seed 2727
+
+# Running:
+
+.
+..........
+success: 100 tests
+..
+..........
+success: 100 tests
+.
+..........
+success: 100 tests
+..
+
+Finished in 0.099329s, 60.4053 runs/s, 3120.9415 assertions/s.
+
+6 runs, 310 assertions, 0 failures, 0 errors, 0 skips
+</code></pre></div></div>
+
+<p>Voilà: properties have saved the day, and you’ve learned not to trust Hacker News bravado ever again.</p>
+
+<h2 id="is-using-rantly-the-same-as-using-quickcheck-or-scalacheck">Is using Rantly the same as using QuickCheck or ScalaCheck?</h2>
+
+<p>Sort of. For one, you have to write your own generators every time you want something other than basic types, while both QuickCheck and ScalaCheck can figure out a lot by themselves. This can make expressing what you mean a lot easier, and you don’t spend time debugging your <code>property</code> blocks in search of mistakes. That said, writing a generator for your own types requires only that you instantiate them in the <code>property</code> blocks with other auto-generated values.</p>
+
+<p>Shrinking is not as good in Rantly. It works ok a lot of the time, but it could be improved. On the surface, from skimming the algorithms used in ScalaCheck and Rantly, it doesn’t <em>seem</em> that different, but over that side of the line the patterns in minimization seem easier to spot.</p>
+
+<p>There’s also no mechanism to test stateful code. ScalaCheck has <a href="https://github.com/rickynils/scalacheck/wiki/User-Guide#stateful-testing">Commands</a> to help in modeling state changes, and I’m aware <a href="https://github.com/manopapad/proper">PropEr</a> and <a href="http://www.quviq.com/">QuickCheck for Erlang</a> also provide something in that direction.</p>
+
+<p>One minor thing is that integration with RSpec and MiniTest could be improved. Its output pollutes the test run, and on large suites it becomes hard to know the relationship between a failed property and a failed test. It should be easy to fix for anyone motivated. On that note, there’s no ready-made extension for MiniTest (although adding one is trivial enough that I’m sending a PR to fix it).</p>
+
+<h2 id="final-considerations">Final considerations</h2>
+
+<p>I hope I have proven, even if with a craptastic example, that property-testing can aid you in writing better Ruby code. Our community is great when it comes to using tests both as a design and as a verification tool, and QuickCheck (via Rantly) is a new way of thinking about them. You should keep your TDD/BDD to carve out your objects and responsibilities, but also add property checks where suitable to strengthen your confidence in the system.</p>
+
+
+  </div><a class="u-url" href="/blog/2014/04/02/property-based-testing-in-ruby/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Troika Tech</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Troika Tech</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/dodecaphonic"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">dodecaphonic</span></a></li><li><a href="https://www.twitter.com/dodecaphonic"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">dodecaphonic</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Ruby and JS in the streets, Haskell and friends between the sheets.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
