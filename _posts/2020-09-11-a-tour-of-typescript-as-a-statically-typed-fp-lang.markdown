@@ -38,7 +38,7 @@ TypeScript gives you enough tools to make illegal states unrepresentable at comp
 
 Expressing these concepts might not be as succint as in Haskell, PureScript or Elm, but it's possible with tolerable noise, resulting in the same compounding benefits you would find in friendlier environs.
 
-What follows is an overview of the basics of using TypeScript successfully as a Haskell impersonator. Some of the examples will rely on the [fp-ts][fpts] ecosystem.
+What follows is an overview of the basics of using TypeScript as a Haskell impersonator. Some of the examples will rely on the [fp-ts][fpts] ecosystem.
 
 ## Thinking in transformations
 
@@ -348,7 +348,7 @@ fp-ts forms a rich ecosystem of libraries that give you lenses, runtime encoding
 
 ## Putting it all together: Functional TypeScript in the workplace
 
-We've been successfully using all of the above (and very little more) at my day job for 10 months, building a robust HTTP API that's serving millions of requests per day, integrating with dozens of services. It goes weeks between serving 500s, and using proper types to model computations that can fail forces the team to handle errors and introduce fallback strategies.
+We've been using all of the above (and very little more) at my day job for 10 months, building a robust HTTP API that's serving millions of requests per day, integrating with dozens of services. It goes weeks between serving 500s, and using proper types to model computations that can fail forces the team to handle errors and introduce fallback strategies.
 
 I consider it a great technical success. But this is only part of the story: getting there required my team to find their footing and get comfortable.
 

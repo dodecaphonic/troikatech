@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2020-09-11T21:30:34-03:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Troika Tech</title><subtitle>Ruby and JS in the streets, Haskell and friends between the sheets.</subtitle><entry><title type="html">A Tour of TypeScript as a Typed Functional Programming Language</title><link href="http://localhost:4000/blog/2020/09/11/a-tour-of-typescript-as-a-statically-typed-fp-lang/" rel="alternate" type="text/html" title="A Tour of TypeScript as a Typed Functional Programming Language" /><published>2020-09-11T16:25:00-03:00</published><updated>2020-09-11T16:25:00-03:00</updated><id>http://localhost:4000/blog/2020/09/11/a-tour-of-typescript-as-a-statically-typed-fp-lang</id><content type="html" xml:base="http://localhost:4000/blog/2020/09/11/a-tour-of-typescript-as-a-statically-typed-fp-lang/">&lt;p&gt;&lt;em&gt;(edited for clarity in 2020-09-11T00:28:15Z)&lt;/em&gt;&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2020-09-11T21:36:26-03:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Troika Tech</title><subtitle>Ruby and JS in the streets, Haskell and friends between the sheets.</subtitle><entry><title type="html">A Tour of TypeScript as a Typed Functional Programming Language</title><link href="http://localhost:4000/blog/2020/09/11/a-tour-of-typescript-as-a-statically-typed-fp-lang/" rel="alternate" type="text/html" title="A Tour of TypeScript as a Typed Functional Programming Language" /><published>2020-09-11T16:25:00-03:00</published><updated>2020-09-11T16:25:00-03:00</updated><id>http://localhost:4000/blog/2020/09/11/a-tour-of-typescript-as-a-statically-typed-fp-lang</id><content type="html" xml:base="http://localhost:4000/blog/2020/09/11/a-tour-of-typescript-as-a-statically-typed-fp-lang/">&lt;p&gt;&lt;em&gt;(edited for clarity in 2020-09-11T00:28:15Z)&lt;/em&gt;&lt;/p&gt;
 
 &lt;p&gt;If you’ve been curious about (or studying) statically typed functional programming for a while, I bet you’ve asked yourself these questions:&lt;/p&gt;
 
@@ -26,7 +26,7 @@
 
 &lt;p&gt;Expressing these concepts might not be as succint as in Haskell, PureScript or Elm, but it’s possible with tolerable noise, resulting in the same compounding benefits you would find in friendlier environs.&lt;/p&gt;
 
-&lt;p&gt;What follows is an overview of the basics of using TypeScript successfully as a Haskell impersonator. Some of the examples will rely on the &lt;a href=&quot;https://gcanti.github.io/fp-ts/&quot;&gt;fp-ts&lt;/a&gt; ecosystem.&lt;/p&gt;
+&lt;p&gt;What follows is an overview of the basics of using TypeScript as a Haskell impersonator. Some of the examples will rely on the &lt;a href=&quot;https://gcanti.github.io/fp-ts/&quot;&gt;fp-ts&lt;/a&gt; ecosystem.&lt;/p&gt;
 
 &lt;h2 id=&quot;thinking-in-transformations&quot;&gt;Thinking in transformations&lt;/h2&gt;
 
@@ -325,7 +325,7 @@
 
 &lt;h2 id=&quot;putting-it-all-together-functional-typescript-in-the-workplace&quot;&gt;Putting it all together: Functional TypeScript in the workplace&lt;/h2&gt;
 
-&lt;p&gt;We’ve been successfully using all of the above (and very little more) at my day job for 10 months, building a robust HTTP API that’s serving millions of requests per day, integrating with dozens of services. It goes weeks between serving 500s, and using proper types to model computations that can fail forces the team to handle errors and introduce fallback strategies.&lt;/p&gt;
+&lt;p&gt;We’ve been using all of the above (and very little more) at my day job for 10 months, building a robust HTTP API that’s serving millions of requests per day, integrating with dozens of services. It goes weeks between serving 500s, and using proper types to model computations that can fail forces the team to handle errors and introduce fallback strategies.&lt;/p&gt;
 
 &lt;p&gt;I consider it a great technical success. But this is only part of the story: getting there required my team to find their footing and get comfortable.&lt;/p&gt;
 
