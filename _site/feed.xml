@@ -1,4 +1,200 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2020-09-11T21:36:26-03:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Troika Tech</title><subtitle>Ruby and JS in the streets, Haskell and friends between the sheets.</subtitle><entry><title type="html">A Tour of TypeScript as a Typed Functional Programming Language</title><link href="http://localhost:4000/blog/2020/09/11/a-tour-of-typescript-as-a-statically-typed-fp-lang/" rel="alternate" type="text/html" title="A Tour of TypeScript as a Typed Functional Programming Language" /><published>2020-09-11T16:25:00-03:00</published><updated>2020-09-11T16:25:00-03:00</updated><id>http://localhost:4000/blog/2020/09/11/a-tour-of-typescript-as-a-statically-typed-fp-lang</id><content type="html" xml:base="http://localhost:4000/blog/2020/09/11/a-tour-of-typescript-as-a-statically-typed-fp-lang/">&lt;p&gt;&lt;em&gt;(edited for clarity in 2020-09-11T00:28:15Z)&lt;/em&gt;&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2020-09-24T10:17:44-03:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Troika Tech</title><subtitle>Ruby and JS in the streets, Haskell and friends between the sheets.</subtitle><entry><title type="html">fp-ts overview: Error handling, the functional way (part 1)</title><link href="http://localhost:4000/blog/2020/09/24/fp-ts-error-handling-the-functional-way/" rel="alternate" type="text/html" title="fp-ts overview: Error handling, the functional way (part 1)" /><published>2020-09-24T10:15:00-03:00</published><updated>2020-09-24T10:15:00-03:00</updated><id>http://localhost:4000/blog/2020/09/24/fp-ts-error-handling-the-functional-way</id><content type="html" xml:base="http://localhost:4000/blog/2020/09/24/fp-ts-error-handling-the-functional-way/">&lt;p&gt;In most codebases, error-handling means &lt;em&gt;exceptions&lt;/em&gt;. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be to signify something in the application domain went wrong.&lt;/p&gt;
+
+&lt;p&gt;The fact exceptions can come from deep within the call stack and bubble up very far from their point of origin often make debugging them hard. They also affect code reuse, as every path that includes exception-throwing code also becomes exceptional — a fact that is usually hidden and forces (careful and caring) developers to perpetually keep documentation up-to-date at every level of the affected call stack to avoid surprising behavior.&lt;/p&gt;
+
+&lt;p&gt;Thinking about the matter might lead us to two conclusions:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Not all exceptions are alike (“Out of memory” is not the same as a domain-specific error that can be tracked and handled);&lt;/li&gt;
+  &lt;li&gt;We would benefit from treating errors less like landmines and more like integral parts of our code.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;These are not original thoughts. Programmers have tried finding ways to make error handling a top concern for decades, and a few different designs are present in mainstream(-ish) languages. Java has &lt;a href=&quot;https://en.wikibooks.org/wiki/Java_Programming/Checked_Exceptions&quot;&gt;checked exceptions&lt;/a&gt;; Go has the infamous &lt;code class=&quot;highlighter-rouge&quot;&gt;if err != nil&lt;/code&gt; pattern; Erlang APIs often return an &lt;code class=&quot;highlighter-rouge&quot;&gt;err&lt;/code&gt; that you check before advancing.&lt;/p&gt;
+
+&lt;p&gt;These are often inconvenient enough that they lead either to sloppiness (errors being ignored or supressed under the assumption that they’re not important or severe enough) or confusion (the happy path becoming muddled by error checking code).&lt;/p&gt;
+
+&lt;p&gt;Modern statically-typed functional programming helps us with that by giving us structures and tools that act as a living document of what might wrong, let us defer handling errors, and make that happy path easy to write (and, more importantly, clear to read). One of these tools is &lt;code class=&quot;highlighter-rouge&quot;&gt;Either&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h1 id=&quot;pushing-errors-to-the-forefront&quot;&gt;Pushing errors to the forefront&lt;/h1&gt;
+
+&lt;p&gt;The key is making errors &lt;em&gt;values&lt;/em&gt; like any other. Unlike relying on implicit behavior, we return an &lt;code class=&quot;highlighter-rouge&quot;&gt;Either&amp;lt;E, A&amp;gt;&lt;/code&gt;, which gives us a &lt;em&gt;left&lt;/em&gt; branch (the &lt;code class=&quot;highlighter-rouge&quot;&gt;E&lt;/code&gt; type, normally used to denote failures), and a &lt;em&gt;right&lt;/em&gt; branch (the &lt;code class=&quot;highlighter-rouge&quot;&gt;A&lt;/code&gt; type, for our desired outcomes).&lt;/p&gt;
+
+&lt;p&gt;That doesn’t imply we have to write tentative code, verifying at every step whether we have a failure or a success. Because &lt;code class=&quot;highlighter-rouge&quot;&gt;Either&lt;/code&gt; favors its right branch, we are able to build data processing pipelines that operate safely, only reaching for the result at the latest possible moment. In practice, this means &lt;em&gt;we can’t forget to deal with failures&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Here’s an example:&lt;/p&gt;
+
+&lt;div class=&quot;language-typescript highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;pipe&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;fp-ts/lib/pipeable&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;fp-ts/lib/Either&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Either&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Either&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;nx&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Transaction&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;unknown&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Balance&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;unknown&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;StatementError&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;invalid bank account&quot;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;missing account number&quot;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;malformed header&quot;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;transaction can't be zeroes&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;kr&quot;&gt;interface&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Statement&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;readonly&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;transactions&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Transaction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[];&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;nx&quot;&gt;declare&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;parseBankStatement&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;rawStatement&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Either&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;StatementError&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Statement&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;declare&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;validateTransactions&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;transactions&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Transaction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[]):&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Either&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;StatementError&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Transaction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[]&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;declare&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;buildBalance&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;transactions&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Transaction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[]):&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Balance&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;kd&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;balanceFromRawStatement&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;rawStatement&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;string&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Either&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;StatementError&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Balance&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;pipe&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;parseBankStatement&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;rawStatement&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;transactions&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;chain&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;validateTransactions&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;buildBalance&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;We move data from step to step as if nothing had gone wrong. If &lt;code class=&quot;highlighter-rouge&quot;&gt;parseBankStatements&lt;/code&gt; returns a &lt;code class=&quot;highlighter-rouge&quot;&gt;Left&lt;/code&gt;, everything else is a no-op; if &lt;code class=&quot;highlighter-rouge&quot;&gt;validateTransactions&lt;/code&gt; returns a &lt;code class=&quot;highlighter-rouge&quot;&gt;Left&lt;/code&gt;, the last &lt;code class=&quot;highlighter-rouge&quot;&gt;E.map&lt;/code&gt; will be skipped. Whatever happens, we don’t have to mix error-handling with the main logic.&lt;/p&gt;
+
+&lt;h1 id=&quot;a-note-about-either-and-errors&quot;&gt;A note about Either and &lt;em&gt;errors&lt;/em&gt;&lt;/h1&gt;
+
+&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;E&lt;/code&gt; in &lt;code class=&quot;highlighter-rouge&quot;&gt;Either&amp;lt;E, A&amp;gt;&lt;/code&gt; can be whatever we want. It doesn’t even have to be an “error”, per se, though the default short-circuiting semantics associated with the left branch remain whatever type ends up being used.&lt;/p&gt;
+
+&lt;h1 id=&quot;employing-either&quot;&gt;Employing Either&lt;/h1&gt;
+
+&lt;p&gt;As with many things in fp-ts, we will use &lt;code class=&quot;highlighter-rouge&quot;&gt;pipe&lt;/code&gt; often. This is mostly for type inferencing reasons, though it also helps us in keeping code declarative by not introducing bindings to hold intermediary steps.&lt;/p&gt;
+
+&lt;h2 id=&quot;putting-things-in-eithers&quot;&gt;Putting things in Eithers&lt;/h2&gt;
+
+&lt;p&gt;We use &lt;code class=&quot;highlighter-rouge&quot;&gt;right&lt;/code&gt; to create a value in the right branch, &lt;code class=&quot;highlighter-rouge&quot;&gt;left&lt;/code&gt; in the left branch:&lt;/p&gt;
+
+&lt;div class=&quot;language-typescript highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;pipe&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;fp-ts/lib/pipeable&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;fp-ts/lib/Either&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Either&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Either&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;kd&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;goodValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Either&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;Error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Good&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;badValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Either&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;Error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;left&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Bad&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;working-with-eithers-when-we-have-rights&quot;&gt;Working with Eithers when we have Rights&lt;/h2&gt;
+
+&lt;p&gt;We can use &lt;code class=&quot;highlighter-rouge&quot;&gt;map&lt;/code&gt; (from Functor) or &lt;code class=&quot;highlighter-rouge&quot;&gt;chain&lt;/code&gt; (from Monad). The main practical difference is that the former allows us to transform the value while keeping it in the right branch, and the latter confers us the power to decide whether to keep on the right or move to the left (i.e. we can decide a computation should be treated as an error from then on).&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;const betterValue = pipe(
+  goodValue,
+  E.map(value =&amp;gt; `${value} is now 'better'`)
+); // this is a changed 'right'
+
+const worseValue = pipe(
+  goodValue,
+  E.chain(value =&amp;gt; E.left(new Error(`Nothing can be ${value} in 2020`)))
+); // this is now a 'left'
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;working-with-eithers-when-we-have-lefts&quot;&gt;Working with Eithers when we have Lefts&lt;/h2&gt;
+
+&lt;p&gt;We can modify the error using &lt;code class=&quot;highlighter-rouge&quot;&gt;mapLeft&lt;/code&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;language-typescript highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;crypticError&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Either&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;number&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;pipe&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;worseValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;mapLeft&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Provide alternative values:&lt;/p&gt;
+
+&lt;div class=&quot;language-typescript highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;improvedValue&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;pipe&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;worseValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;alt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Back to 2015&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Provide alternative values while peeking at the error:&lt;/p&gt;
+
+&lt;div class=&quot;language-typescript highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;optimisticValue&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;pipe&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;worseValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;orElse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;. But there's always 2021.`&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Note: we don’t necessarily have to provide a &lt;code class=&quot;highlighter-rouge&quot;&gt;right&lt;/code&gt;. We can map an error to another error, for instance.&lt;/p&gt;
+
+&lt;h2 id=&quot;working-with-existing-code-that-might-throw-exceptions&quot;&gt;Working with existing code that might throw exceptions&lt;/h2&gt;
+
+&lt;p&gt;TypeScript operates under the rules of JavaScript, and our application will inevitably integrate with third-party code that creates exceptions. We could use &lt;code class=&quot;highlighter-rouge&quot;&gt;try...catch&lt;/code&gt; and do our own wrapping, but &lt;code class=&quot;highlighter-rouge&quot;&gt;Either.tryCatch&lt;/code&gt; already takes care of that pattern for us:&lt;/p&gt;
+
+&lt;div class=&quot;language-typescript highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;safeParseJson&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Either&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;Error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;unknown&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;tryCatch&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;Error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;unknown&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;JSON&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;parse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;instanceof&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Error&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;?&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;unexpected error when parsing json&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;kd&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;yayJson&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;safeParseJson&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;taking-things-out-of-eithers&quot;&gt;Taking things out of Eithers&lt;/h2&gt;
+
+&lt;p&gt;It’s not possible to reach into an Either and take the value or the error out. We have to help the compiler understand what is actually possible based on the runtime value we have at hand.&lt;/p&gt;
+
+&lt;p&gt;One way to do it is using the type guards defined in fp-ts’s Either:&lt;/p&gt;
+
+&lt;div class=&quot;language-typescript highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;isLeft&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;worseValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// worseValue.left will be available&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// worseValue.right will be available&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;isRight&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;worseValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// worseValue.right will be available&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// worseValue.left will be available&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This may be useful in some situations, but it won’t fit with our pipelines as well as the alternatives. Instead, we should use the helper functions defined in Either&lt;/p&gt;
+
+&lt;h3 id=&quot;getorelse&quot;&gt;getOrElse&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;getOrElse&lt;/code&gt; requires us to define a way to build an &lt;code class=&quot;highlighter-rouge&quot;&gt;A&lt;/code&gt; from an &lt;code class=&quot;highlighter-rouge&quot;&gt;E&lt;/code&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;language-typescript highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;mehValue&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;pipe&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;worseValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;getOrElse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;`I used to be &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;. Now I'm free`&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;fold&quot;&gt;fold&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;fold&lt;/code&gt; requires us to provide mappings from &lt;code class=&quot;highlighter-rouge&quot;&gt;E&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;A&lt;/code&gt; to a common type &lt;code class=&quot;highlighter-rouge&quot;&gt;B&lt;/code&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;language-typescript highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;answer&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;pipe&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;improvedValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;fold&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;42&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;value&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;value&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;length&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;fold&lt;/code&gt; is more powerful than &lt;code class=&quot;highlighter-rouge&quot;&gt;getOrElse&lt;/code&gt;, because you can perform transformations (i.e. &lt;code class=&quot;highlighter-rouge&quot;&gt;getOrElse&lt;/code&gt; requires you to provide a value of the same type &lt;code class=&quot;highlighter-rouge&quot;&gt;A&lt;/code&gt; as in the &lt;code class=&quot;highlighter-rouge&quot;&gt;Either&lt;/code&gt;, while &lt;code class=&quot;highlighter-rouge&quot;&gt;fold&lt;/code&gt; allows you to return a &lt;code class=&quot;highlighter-rouge&quot;&gt;B&lt;/code&gt;).&lt;/p&gt;
+
+&lt;h1 id=&quot;variations-defined-in-the-library&quot;&gt;Variations &lt;a href=&quot;https://gcanti.github.io/fp-ts/modules/&quot;&gt;defined in the library&lt;/a&gt;:&lt;/h1&gt;
+
+&lt;p&gt;Either is useful in other contexts — when performing IO, when performing async computations, when performing computations within a context/environment, when performing async computations within a context/environment, et cetera —, and fp-ts ships with a few different monad stacks that include it:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;IOEither&amp;lt;E, A&amp;gt;&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;TaskEither&amp;lt;E, A&amp;gt;&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ReaderEither&amp;lt;E, A&amp;gt;&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ReaderTaskEither&amp;lt;R, E, A&amp;gt;&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;StateReaderTaskEither&amp;lt;S, R, E, A&amp;gt;&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;coming-soon-in-blogs-code-for-this-is-the-last-post-for-a-while&quot;&gt;Coming soon (in blogs, code for “this is the last post for a while”)&lt;/h1&gt;
+
+&lt;p&gt;In part 2, we’ll talk about calling functions when you have more than one &lt;code class=&quot;highlighter-rouge&quot;&gt;Either&lt;/code&gt;, accumulating errors (instead of short-circuiting), pulling things inside-out, and writing confident and expressive code using &lt;code class=&quot;highlighter-rouge&quot;&gt;Either&lt;/code&gt;. Stay tuned.&lt;/p&gt;</content><author><name></name></author><category term="haskell" /><category term="fp" /><category term="typescript" /><category term="fp-ts" /><category term="io-ts" /><category term="functional" /><category term="functionalprogramming" /><category term="either" /><summary type="html">In most codebases, error-handling means exceptions. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be to signify something in the application domain went wrong.</summary></entry><entry><title type="html">A Tour of TypeScript as a Typed Functional Programming Language</title><link href="http://localhost:4000/blog/2020/09/11/a-tour-of-typescript-as-a-statically-typed-fp-lang/" rel="alternate" type="text/html" title="A Tour of TypeScript as a Typed Functional Programming Language" /><published>2020-09-11T16:25:00-03:00</published><updated>2020-09-11T16:25:00-03:00</updated><id>http://localhost:4000/blog/2020/09/11/a-tour-of-typescript-as-a-statically-typed-fp-lang</id><content type="html" xml:base="http://localhost:4000/blog/2020/09/11/a-tour-of-typescript-as-a-statically-typed-fp-lang/">&lt;p&gt;&lt;em&gt;(edited for clarity in 2020-09-11T00:28:15Z)&lt;/em&gt;&lt;/p&gt;
 
 &lt;p&gt;If you’ve been curious about (or studying) statically typed functional programming for a while, I bet you’ve asked yourself these questions:&lt;/p&gt;
 
@@ -1167,48 +1363,4 @@ end
 
 &lt;p&gt;The documentation also doesn’t go over all the events that can happen on the socket (&lt;em&gt;onerror&lt;/em&gt;, &lt;em&gt;onclose&lt;/em&gt;, &lt;em&gt;onopen&lt;/em&gt;, &lt;em&gt;onmessage&lt;/em&gt;). You can see them as methods on the socket, each taking a block, but for my use case I just let the actor crash and be done with it. If I’m missing some cleanup, please let me know.&lt;/p&gt;
 
-&lt;p&gt;This architecture also doesn’t provide a ready-baked pub/sub system, with channels and message brokers. If that’s more in the spirit of what you need, check out &lt;a href=&quot;http://faye.jcoglan.com/&quot;&gt;faye&lt;/a&gt; and &lt;a href=&quot;https://github.com/websocket-rails/websocket-rails&quot;&gt;websocket-rails&lt;/a&gt;.&lt;/p&gt;</content><author><name></name></author><category term="ruby" /><category term="websockets" /><category term="rails" /><category term="web" /><category term="celluloid" /><category term="webmachine-ruby" /><summary type="html">At my main job, we have a large datastructure that takes considerable CPU time to be built, but remains unchanged thereafter. Its job is to geocode positions to and from a local reference system, which in turn provides us the ability to pin records, for instance, to a place on a Road, and know to which coordinate pair a local reference would correspond.</summary></entry><entry><title type="html">“Principles of Reactive Programming”, a review</title><link href="http://localhost:4000/blog/2014/01/12/reactive/" rel="alternate" type="text/html" title="&quot;Principles of Reactive Programming&quot;, a review" /><published>2014-01-12T13:15:00-02:00</published><updated>2014-01-12T13:15:00-02:00</updated><id>http://localhost:4000/blog/2014/01/12/reactive</id><content type="html" xml:base="http://localhost:4000/blog/2014/01/12/reactive/">&lt;p&gt;After the positive experience learning some Scala and some functional patterns in &lt;a href=&quot;https://www.coursera.org/course/progfun&quot;&gt;Functional Programming Principles in Scala&lt;/a&gt;, I was excited to undertake the new course from Martin Odersky and co. The fact that it would pick up from where it left off and build on the &lt;a href=&quot;http://www.reactivemanifesto.org/&quot;&gt;Reactive brouhaha&lt;/a&gt; was icing in the cake; after all, the techniques and technologies approached in the lectures highlight some of what Scala does best.&lt;/p&gt;
-
-&lt;h2 id=&quot;structure&quot;&gt;Structure&lt;/h2&gt;
-
-&lt;p&gt;It starts with mr. Odersky’s already familiar style, reviewing some of what was taught in the previous course and expanding on some topics. The dreaded Monads were dealt with, and while I can’t talk about the subject from a theoretical standpoint or offer a perfect explanation, I feel I grasp how they can be used to compose behavior and express functionality better.&lt;/p&gt;
-
-&lt;p&gt;The second part was the highlight, for me. Erik Meijer (from LINQ and Reactive Extensions fame on the .NET land) has an incredibly upbeat energy and great sense of humor, which carry you like a breeze through the amazing concepts he expresses. I loved thinking about Event streams and how to compose them using monadic combinators in the form of &lt;code&gt;Observables&lt;/code&gt; (alongside &lt;code&gt;Subscriptions&lt;/code&gt;, &lt;code&gt;Schedulers&lt;/code&gt;, &lt;code&gt;Promises&lt;/code&gt; and &lt;code&gt;Futures&lt;/code&gt;). I think this affected me the most, for I could clearly see how to mix and match things to add behavior.&lt;/p&gt;
-
-&lt;p&gt;The third part was also very good. Roland Kuhn (Akka’s tech lead) has a soft-spoken style that relaxes you while he lays the groundwork over which you’ll learn about Actors, building distributed systems and dealing with failure in that model. He also shows piece by piece what &lt;a href=&quot;http://akka.io&quot;&gt;Akka&lt;/a&gt; can do (which led me to explore more of &lt;a href=&quot;https://github.com/celluloid/celluloid&quot;&gt;Celluloid&lt;/a&gt;, a topic for a future post).&lt;/p&gt;
-
-&lt;h2 id=&quot;exercises&quot;&gt;Exercises&lt;/h2&gt;
-
-&lt;p&gt;Everything comes together with each week’s exercises. The first was a quick-and-simple one that explores &lt;a href=&quot;http://www.scalacheck.org/&quot;&gt;property testing&lt;/a&gt;. I went through it quickly, but I still find it hard to apply that mode of thinking, and didn’t get much out of the technique later on. I know this is a personal limitation, as some people in the course forums mentioned using it to great effect.&lt;/p&gt;
-
-&lt;p&gt;After that, you get a wake-up call that this is gonna require some hard work right as you’re asked to build two simulations: one of circuits, with emphasis on building a demultiplexer, and one of an epidemy. The fact that this involves timing and sequencing makes you think about state and purely functional programs. Building something substantial (and fun to watch) gives you an appreciation of their usefulness.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://dl.dropboxusercontent.com/s/ml6pp98zwfufbob/2014-01-12%20at%2014.52.png&quot; alt=&quot;Epidemy simulation&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Erik Meijer’s had cool, practical examples: you build a node-style web server (with a Reactor loop) in the first week and a Wikipedia Swing client using reactive streams for GUI events and networking in the second. It makes you want to write everything in this style, because it becomes much easier to think about &lt;em&gt;what&lt;/em&gt; happens &lt;em&gt;when&lt;/em&gt; with &lt;em&gt;whom&lt;/em&gt;.&lt;/p&gt;
-
-&lt;p&gt;The third section, on Akka, takes the prize in this area: first you redo the binary search tree exercise from the first course using Actors, which I found a great idea, as you’re confronted just with the new concepts. Then you are challenged into building a (simplified) distributed key-value store, including replication and joining of new nodes. Describing this exercise to colleagues made them want to take the course. I hope they do.&lt;/p&gt;
-
-&lt;h2 id=&quot;scala&quot;&gt;Scala&lt;/h2&gt;
-
-&lt;p&gt;Being forced to use more Scala made my interest in it grow more and more. &lt;a href=&quot;https://al3x.net/&quot;&gt;Alex Payne&lt;/a&gt; has said that it feels a bit like Ruby in its expressiveness, and I got that while building the exercises. I confess it is refreshing and enlightening to use types as a way of reasoning, and not as something that just soothes a compiler with a frail ego.&lt;/p&gt;
-
-&lt;p&gt;On the other hand, tooling was problematic. Being an Emacs user, I try to keep in it at all times, and surprisingly (coupled with &lt;a href=&quot;https://github.com/aemoncannon/ensime&quot;&gt;ENSIME&lt;/a&gt;) the experience was not bad. Still I tried to take the opportunity to learn a little bit more about what is offered and how well it works, and the experience was not so great. Importing the provided Eclipse projects sometimes resulted in missing dependencies; importing the sbt project in IntelliJ IDEA resulted in error messages complaining about the TEST context, which some of the students claimed could be solved with nightly builds of its Scala and SBT plugins.&lt;/p&gt;
-
-&lt;p&gt;In ENSIME it mostly worked fine. Sometimes I needed to run the tests before generating the project in &lt;code&gt;sbt&lt;/code&gt;, or to regenerate the project as I fleshed out the code. This was not that that awful, in the end: coming from a world of no static types, no code completion, poor navigation (seriously, guys, I’ve used dynamic languages for over 15 years, and grep/ack/ag is not a good replacement) and pretty crude automatic refactorings, it felt like I was thrown into a better world. I find myself missing it in my daily Ruby dealings.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://dl.dropboxusercontent.com/s/c0ce5j0jlknn90r/2014-01-12%20at%2014.47.png&quot; alt=&quot;ENSIME as I worked through the exercises&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;I realize the situation with Eclipse and IntelliJ may be specific to the course, as the canonical thing to use was sbt. However, being that sbt is the canonical build tool, period, it made the experience messy, and complaints in the forum suggest there’s still a lot to improve here. We developers are used these sorts of hurdles (and, let’s be frank, to learning workarounds), but this is the type of thing that turns off someone that is not yet invested in the tech.&lt;/p&gt;
-
-&lt;h2 id=&quot;what-i-learned-about-myself&quot;&gt;What I learned about myself&lt;/h2&gt;
-
-&lt;p&gt;Comparing my approach to my fellow students’, I found I could go through most things relatively easily, based on experience alone, but that eventually I had to exercise muscles in areas I consider mostly weak: self-reliance and grit. It was necessary to overcome my impulse to procrastinate when facing a roadblock, and also to not feel guilty about going to the forums, reading about other people’s struggles or using a test suite that some kind soul provided for everyone else.&lt;/p&gt;
-
-&lt;p&gt;To face things that are known but empirically unexplored made me question my ability, and demanded a hard look at my self-image. It took great care and some pain to keep motivated and think of the outcome. The sense of pride from having completed this without delaying a single exercise makes me believe I can accomplish more. Furthermore, getting a near-perfect score for the effort is very sweet.&lt;/p&gt;
-
-&lt;p&gt;I hope this helps me become a little more patient. My instinct is to go for quick intellectual gratification, for tight feedback loops, and that is not always possible (or even desirable). Standing on the shoulder of giants requires a climb; I must remember not be discouraged after the first stretch.&lt;/p&gt;
-
-&lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h2&gt;
-
-&lt;p&gt;I recommend everyone to go through this course. It is challenging, rewarding and (for me) a good source of personal growth. Scala is very interesting, and worthy of your time, and Akka is incredible. I found the different teaching styles refreshing, a great way to keep the learner engaged. All in all, a delightful experience.&lt;/p&gt;</content><author><name></name></author><category term="scala" /><category term="akka" /><category term="actors" /><category term="reactive" /><summary type="html">After the positive experience learning some Scala and some functional patterns in Functional Programming Principles in Scala, I was excited to undertake the new course from Martin Odersky and co. The fact that it would pick up from where it left off and build on the Reactive brouhaha was icing in the cake; after all, the techniques and technologies approached in the lectures highlight some of what Scala does best.</summary></entry></feed>
+&lt;p&gt;This architecture also doesn’t provide a ready-baked pub/sub system, with channels and message brokers. If that’s more in the spirit of what you need, check out &lt;a href=&quot;http://faye.jcoglan.com/&quot;&gt;faye&lt;/a&gt; and &lt;a href=&quot;https://github.com/websocket-rails/websocket-rails&quot;&gt;websocket-rails&lt;/a&gt;.&lt;/p&gt;</content><author><name></name></author><category term="ruby" /><category term="websockets" /><category term="rails" /><category term="web" /><category term="celluloid" /><category term="webmachine-ruby" /><summary type="html">At my main job, we have a large datastructure that takes considerable CPU time to be built, but remains unchanged thereafter. Its job is to geocode positions to and from a local reference system, which in turn provides us the ability to pin records, for instance, to a place on a Road, and know to which coordinate pair a local reference would correspond.</summary></entry></feed>

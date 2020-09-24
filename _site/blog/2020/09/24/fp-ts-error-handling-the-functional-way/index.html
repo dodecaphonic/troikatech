@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>fp-ts overview: Error handling, the functional way (part 1) | Troika Tech</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="fp-ts overview: Error handling, the functional way (part 1)" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="In most codebases, error-handling means exceptions. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be to signify something in the application domain went wrong." />
+<meta property="og:description" content="In most codebases, error-handling means exceptions. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be to signify something in the application domain went wrong." />
+<link rel="canonical" href="http://localhost:4000/blog/2020/09/24/fp-ts-error-handling-the-functional-way/" />
+<meta property="og:url" content="http://localhost:4000/blog/2020/09/24/fp-ts-error-handling-the-functional-way/" />
+<meta property="og:site_name" content="Troika Tech" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-09-24T10:15:00-03:00" />
+<script type="application/ld+json">
+{"headline":"fp-ts overview: Error handling, the functional way (part 1)","dateModified":"2020-09-24T10:15:00-03:00","datePublished":"2020-09-24T10:15:00-03:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/blog/2020/09/24/fp-ts-error-handling-the-functional-way/"},"url":"http://localhost:4000/blog/2020/09/24/fp-ts-error-handling-the-functional-way/","description":"In most codebases, error-handling means exceptions. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be to signify something in the application domain went wrong.","@type":"BlogPosting","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Troika Tech" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Troika Tech</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">fp-ts overview: Error handling, the functional way (part 1)</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2020-09-24T10:15:00-03:00" itemprop="datePublished">Sep 24, 2020
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>In most codebases, error-handling means <em>exceptions</em>. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be to signify something in the application domain went wrong.</p>
+
+<p>The fact exceptions can come from deep within the call stack and bubble up very far from their point of origin often make debugging them hard. They also affect code reuse, as every path that includes exception-throwing code also becomes exceptional — a fact that is usually hidden and forces (careful and caring) developers to perpetually keep documentation up-to-date at every level of the affected call stack to avoid surprising behavior.</p>
+
+<p>Thinking about the matter might lead us to two conclusions:</p>
+
+<ul>
+  <li>Not all exceptions are alike (“Out of memory” is not the same as a domain-specific error that can be tracked and handled);</li>
+  <li>We would benefit from treating errors less like landmines and more like integral parts of our code.</li>
+</ul>
+
+<p>These are not original thoughts. Programmers have tried finding ways to make error handling a top concern for decades, and a few different designs are present in mainstream(-ish) languages. Java has <a href="https://en.wikibooks.org/wiki/Java_Programming/Checked_Exceptions">checked exceptions</a>; Go has the infamous <code class="highlighter-rouge">if err != nil</code> pattern; Erlang APIs often return an <code class="highlighter-rouge">err</code> that you check before advancing.</p>
+
+<p>These are often inconvenient enough that they lead either to sloppiness (errors being ignored or supressed under the assumption that they’re not important or severe enough) or confusion (the happy path becoming muddled by error checking code).</p>
+
+<p>Modern statically-typed functional programming helps us with that by giving us structures and tools that act as a living document of what might wrong, let us defer handling errors, and make that happy path easy to write (and, more importantly, clear to read). One of these tools is <code class="highlighter-rouge">Either</code>.</p>
+
+<h1 id="pushing-errors-to-the-forefront">Pushing errors to the forefront</h1>
+
+<p>The key is making errors <em>values</em> like any other. Unlike relying on implicit behavior, we return an <code class="highlighter-rouge">Either&lt;E, A&gt;</code>, which gives us a <em>left</em> branch (the <code class="highlighter-rouge">E</code> type, normally used to denote failures), and a <em>right</em> branch (the <code class="highlighter-rouge">A</code> type, for our desired outcomes).</p>
+
+<p>That doesn’t imply we have to write tentative code, verifying at every step whether we have a failure or a success. Because <code class="highlighter-rouge">Either</code> favors its right branch, we are able to build data processing pipelines that operate safely, only reaching for the result at the latest possible moment. In practice, this means <em>we can’t forget to deal with failures</em>.</p>
+
+<p>Here’s an example:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">pipe</span> <span class="p">}</span> <span class="k">from</span> <span class="s2">"fp-ts/lib/pipeable"</span><span class="p">;</span>
+<span class="k">import</span> <span class="o">*</span> <span class="k">as</span> <span class="nx">E</span> <span class="k">from</span> <span class="s2">"fp-ts/lib/Either"</span><span class="p">;</span>
+
+<span class="k">import</span> <span class="nx">Either</span> <span class="o">=</span> <span class="nx">E</span><span class="p">.</span><span class="nx">Either</span><span class="p">;</span>
+
+<span class="nx">type</span> <span class="nx">Transaction</span> <span class="o">=</span> <span class="nx">unknown</span><span class="p">;</span>
+<span class="nx">type</span> <span class="nx">Balance</span> <span class="o">=</span> <span class="nx">unknown</span><span class="p">;</span>
+<span class="nx">type</span> <span class="nx">StatementError</span> <span class="o">=</span>
+  <span class="o">|</span> <span class="s2">"invalid bank account"</span>
+  <span class="o">|</span> <span class="s2">"missing account number"</span>
+  <span class="o">|</span> <span class="s2">"malformed header"</span>
+  <span class="o">|</span> <span class="s2">"transaction can't be zeroes"</span><span class="p">;</span>
+
+<span class="kr">interface</span> <span class="nx">Statement</span> <span class="p">{</span>
+  <span class="nx">readonly</span> <span class="nx">transactions</span><span class="p">:</span> <span class="nx">Transaction</span><span class="p">[];</span>
+<span class="p">}</span>
+
+<span class="nx">declare</span> <span class="kd">function</span> <span class="nx">parseBankStatement</span><span class="p">(</span><span class="nx">rawStatement</span><span class="p">:</span> <span class="nx">string</span><span class="p">):</span> <span class="nx">Either</span><span class="o">&lt;</span><span class="nx">StatementError</span><span class="p">,</span> <span class="nx">Statement</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="nx">declare</span> <span class="kd">function</span> <span class="nx">validateTransactions</span><span class="p">(</span><span class="nx">transactions</span><span class="p">:</span> <span class="nx">Transaction</span><span class="p">[]):</span> <span class="nx">Either</span><span class="o">&lt;</span><span class="nx">StatementError</span><span class="p">,</span> <span class="nx">Transaction</span><span class="p">[]</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="nx">declare</span> <span class="kd">function</span> <span class="nx">buildBalance</span><span class="p">(</span><span class="nx">transactions</span><span class="p">:</span> <span class="nx">Transaction</span><span class="p">[]):</span> <span class="nx">Balance</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">balanceFromRawStatement</span> <span class="o">=</span> <span class="p">(</span>
+  <span class="nx">rawStatement</span><span class="p">:</span> <span class="nx">string</span>
+<span class="p">):</span> <span class="nx">Either</span><span class="o">&lt;</span><span class="nx">StatementError</span><span class="p">,</span> <span class="nx">Balance</span><span class="o">&gt;</span> <span class="o">=&gt;</span>
+  <span class="nx">pipe</span><span class="p">(</span>
+    <span class="nx">parseBankStatement</span><span class="p">(</span><span class="nx">rawStatement</span><span class="p">),</span>
+    <span class="nx">E</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">s</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="nx">s</span><span class="p">.</span><span class="nx">transactions</span><span class="p">),</span>
+    <span class="nx">E</span><span class="p">.</span><span class="nx">chain</span><span class="p">(</span><span class="nx">validateTransactions</span><span class="p">),</span>
+    <span class="nx">E</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">buildBalance</span><span class="p">)</span>
+  <span class="p">);</span>
+</code></pre></div></div>
+
+<p>We move data from step to step as if nothing had gone wrong. If <code class="highlighter-rouge">parseBankStatements</code> returns a <code class="highlighter-rouge">Left</code>, everything else is a no-op; if <code class="highlighter-rouge">validateTransactions</code> returns a <code class="highlighter-rouge">Left</code>, the last <code class="highlighter-rouge">E.map</code> will be skipped. Whatever happens, we don’t have to mix error-handling with the main logic.</p>
+
+<h1 id="a-note-about-either-and-errors">A note about Either and <em>errors</em></h1>
+
+<p>The <code class="highlighter-rouge">E</code> in <code class="highlighter-rouge">Either&lt;E, A&gt;</code> can be whatever we want. It doesn’t even have to be an “error”, per se, though the default short-circuiting semantics associated with the left branch remain whatever type ends up being used.</p>
+
+<h1 id="employing-either">Employing Either</h1>
+
+<p>As with many things in fp-ts, we will use <code class="highlighter-rouge">pipe</code> often. This is mostly for type inferencing reasons, though it also helps us in keeping code declarative by not introducing bindings to hold intermediary steps.</p>
+
+<h2 id="putting-things-in-eithers">Putting things in Eithers</h2>
+
+<p>We use <code class="highlighter-rouge">right</code> to create a value in the right branch, <code class="highlighter-rouge">left</code> in the left branch:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">pipe</span> <span class="p">}</span> <span class="k">from</span> <span class="s2">"fp-ts/lib/pipeable"</span><span class="p">;</span>
+<span class="k">import</span> <span class="o">*</span> <span class="k">as</span> <span class="nx">E</span> <span class="k">from</span> <span class="s2">"fp-ts/lib/Either"</span><span class="p">;</span>
+
+<span class="k">import</span> <span class="nx">Either</span> <span class="o">=</span> <span class="nx">E</span><span class="p">.</span><span class="nx">Either</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">goodValue</span><span class="p">:</span> <span class="nx">Either</span><span class="o">&lt;</span><span class="nb">Error</span><span class="p">,</span> <span class="nx">string</span><span class="o">&gt;</span> <span class="o">=</span> <span class="nx">E</span><span class="p">.</span><span class="nx">right</span><span class="p">(</span><span class="s2">"Good"</span><span class="p">);</span>
+<span class="kd">const</span> <span class="nx">badValue</span><span class="p">:</span> <span class="nx">Either</span><span class="o">&lt;</span><span class="nb">Error</span><span class="p">,</span> <span class="nx">string</span><span class="o">&gt;</span> <span class="o">=</span> <span class="nx">E</span><span class="p">.</span><span class="nx">left</span><span class="p">(</span><span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s2">"Bad"</span><span class="p">));</span>
+</code></pre></div></div>
+
+<h2 id="working-with-eithers-when-we-have-rights">Working with Eithers when we have Rights</h2>
+
+<p>We can use <code class="highlighter-rouge">map</code> (from Functor) or <code class="highlighter-rouge">chain</code> (from Monad). The main practical difference is that the former allows us to transform the value while keeping it in the right branch, and the latter confers us the power to decide whether to keep on the right or move to the left (i.e. we can decide a computation should be treated as an error from then on).</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>const betterValue = pipe(
+  goodValue,
+  E.map(value =&gt; `${value} is now 'better'`)
+); // this is a changed 'right'
+
+const worseValue = pipe(
+  goodValue,
+  E.chain(value =&gt; E.left(new Error(`Nothing can be ${value} in 2020`)))
+); // this is now a 'left'
+</code></pre></div></div>
+
+<h2 id="working-with-eithers-when-we-have-lefts">Working with Eithers when we have Lefts</h2>
+
+<p>We can modify the error using <code class="highlighter-rouge">mapLeft</code>:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">crypticError</span><span class="p">:</span> <span class="nx">Either</span><span class="o">&lt;</span><span class="nx">number</span><span class="p">,</span> <span class="nx">string</span><span class="o">&gt;</span> <span class="o">=</span> <span class="nx">pipe</span><span class="p">(</span>
+  <span class="nx">worseValue</span><span class="p">,</span>
+  <span class="nx">E</span><span class="p">.</span><span class="nx">mapLeft</span><span class="p">((</span><span class="nx">err</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="nx">err</span><span class="p">.</span><span class="nx">message</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>Provide alternative values:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">improvedValue</span> <span class="o">=</span> <span class="nx">pipe</span><span class="p">(</span>
+  <span class="nx">worseValue</span><span class="p">,</span>
+  <span class="nx">E</span><span class="p">.</span><span class="nx">alt</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="nx">E</span><span class="p">.</span><span class="nx">right</span><span class="p">(</span><span class="s2">"Back to 2015"</span><span class="p">))</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>Provide alternative values while peeking at the error:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">optimisticValue</span> <span class="o">=</span> <span class="nx">pipe</span><span class="p">(</span>
+  <span class="nx">worseValue</span><span class="p">,</span>
+  <span class="nx">E</span><span class="p">.</span><span class="nx">orElse</span><span class="p">((</span><span class="nx">err</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="nx">E</span><span class="p">.</span><span class="nx">right</span><span class="p">(</span><span class="s2">`</span><span class="p">${</span><span class="nx">err</span><span class="p">.</span><span class="nx">message</span><span class="p">}</span><span class="s2">. But there's always 2021.`</span><span class="p">))</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>Note: we don’t necessarily have to provide a <code class="highlighter-rouge">right</code>. We can map an error to another error, for instance.</p>
+
+<h2 id="working-with-existing-code-that-might-throw-exceptions">Working with existing code that might throw exceptions</h2>
+
+<p>TypeScript operates under the rules of JavaScript, and our application will inevitably integrate with third-party code that creates exceptions. We could use <code class="highlighter-rouge">try...catch</code> and do our own wrapping, but <code class="highlighter-rouge">Either.tryCatch</code> already takes care of that pattern for us:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">safeParseJson</span> <span class="o">=</span> <span class="p">(</span><span class="nx">str</span><span class="p">:</span> <span class="nx">string</span><span class="p">):</span> <span class="nx">Either</span><span class="o">&lt;</span><span class="nb">Error</span><span class="p">,</span> <span class="nx">unknown</span><span class="o">&gt;</span> <span class="o">=&gt;</span>
+  <span class="nx">E</span><span class="p">.</span><span class="nx">tryCatch</span><span class="o">&lt;</span><span class="nb">Error</span><span class="p">,</span> <span class="nx">unknown</span><span class="o">&gt;</span><span class="p">(</span>
+    <span class="p">()</span> <span class="o">=&gt;</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">str</span><span class="p">),</span>
+    <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="nx">err</span> <span class="k">instanceof</span> <span class="nb">Error</span> <span class="p">?</span> <span class="nx">err</span> <span class="p">:</span> <span class="nb">Error</span><span class="p">(</span><span class="s2">"unexpected error when parsing json"</span><span class="p">))</span>
+  <span class="p">);</span>
+
+<span class="kd">const</span> <span class="nx">yayJson</span> <span class="o">=</span> <span class="nx">safeParseJson</span><span class="p">(</span><span class="s2">"}"</span><span class="p">);</span>
+</code></pre></div></div>
+
+<h2 id="taking-things-out-of-eithers">Taking things out of Eithers</h2>
+
+<p>It’s not possible to reach into an Either and take the value or the error out. We have to help the compiler understand what is actually possible based on the runtime value we have at hand.</p>
+
+<p>One way to do it is using the type guards defined in fp-ts’s Either:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="p">(</span><span class="nx">E</span><span class="p">.</span><span class="nx">isLeft</span><span class="p">(</span><span class="nx">worseValue</span><span class="p">))</span> <span class="p">{</span>
+  <span class="c1">// worseValue.left will be available</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+  <span class="c1">// worseValue.right will be available</span>
+<span class="p">}</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="nx">E</span><span class="p">.</span><span class="nx">isRight</span><span class="p">(</span><span class="nx">worseValue</span><span class="p">))</span> <span class="p">{</span>
+  <span class="c1">// worseValue.right will be available</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+  <span class="c1">// worseValue.left will be available</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This may be useful in some situations, but it won’t fit with our pipelines as well as the alternatives. Instead, we should use the helper functions defined in Either</p>
+
+<h3 id="getorelse">getOrElse</h3>
+
+<p><code class="highlighter-rouge">getOrElse</code> requires us to define a way to build an <code class="highlighter-rouge">A</code> from an <code class="highlighter-rouge">E</code>:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">mehValue</span> <span class="o">=</span> <span class="nx">pipe</span><span class="p">(</span>
+  <span class="nx">worseValue</span><span class="p">,</span>
+  <span class="nx">E</span><span class="p">.</span><span class="nx">getOrElse</span><span class="p">((</span><span class="nx">err</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="s2">`I used to be </span><span class="p">${</span><span class="nx">err</span><span class="p">}</span><span class="s2">. Now I'm free`</span><span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<h3 id="fold">fold</h3>
+
+<p><code class="highlighter-rouge">fold</code> requires us to provide mappings from <code class="highlighter-rouge">E</code> and <code class="highlighter-rouge">A</code> to a common type <code class="highlighter-rouge">B</code>:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">answer</span> <span class="o">=</span> <span class="nx">pipe</span><span class="p">(</span>
+  <span class="nx">improvedValue</span><span class="p">,</span>
+  <span class="nx">E</span><span class="p">.</span><span class="nx">fold</span><span class="p">(</span>
+    <span class="p">()</span> <span class="o">=&gt;</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="nx">value</span><span class="p">.</span><span class="nx">length</span>
+  <span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p><code class="highlighter-rouge">fold</code> is more powerful than <code class="highlighter-rouge">getOrElse</code>, because you can perform transformations (i.e. <code class="highlighter-rouge">getOrElse</code> requires you to provide a value of the same type <code class="highlighter-rouge">A</code> as in the <code class="highlighter-rouge">Either</code>, while <code class="highlighter-rouge">fold</code> allows you to return a <code class="highlighter-rouge">B</code>).</p>
+
+<h1 id="variations-defined-in-the-library">Variations <a href="https://gcanti.github.io/fp-ts/modules/">defined in the library</a>:</h1>
+
+<p>Either is useful in other contexts — when performing IO, when performing async computations, when performing computations within a context/environment, when performing async computations within a context/environment, et cetera —, and fp-ts ships with a few different monad stacks that include it:</p>
+
+<ul>
+  <li><code class="highlighter-rouge">IOEither&lt;E, A&gt;</code></li>
+  <li><code class="highlighter-rouge">TaskEither&lt;E, A&gt;</code></li>
+  <li><code class="highlighter-rouge">ReaderEither&lt;E, A&gt;</code></li>
+  <li><code class="highlighter-rouge">ReaderTaskEither&lt;R, E, A&gt;</code></li>
+  <li><code class="highlighter-rouge">StateReaderTaskEither&lt;S, R, E, A&gt;</code></li>
+</ul>
+
+<h1 id="coming-soon-in-blogs-code-for-this-is-the-last-post-for-a-while">Coming soon (in blogs, code for “this is the last post for a while”)</h1>
+
+<p>In part 2, we’ll talk about calling functions when you have more than one <code class="highlighter-rouge">Either</code>, accumulating errors (instead of short-circuiting), pulling things inside-out, and writing confident and expressive code using <code class="highlighter-rouge">Either</code>. Stay tuned.</p>
+
+
+  </div><a class="u-url" href="/blog/2020/09/24/fp-ts-error-handling-the-functional-way/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Troika Tech</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Troika Tech</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/dodecaphonic"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">dodecaphonic</span></a></li><li><a href="https://www.twitter.com/dodecaphonic"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">dodecaphonic</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Ruby and JS in the streets, Haskell and friends between the sheets.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
