@@ -18,7 +18,7 @@ I don't know about you, but when I come in contact with stuff like that I immedi
 
 Let's say we've decided to implement our own linked list class in Ruby. We would probably start our implementation with something like this:
 
-``` ruby "List" https://gist.github.com/dodecaphonic/9934064#file-list-rb
+```ruby
 require "singleton"
 
 class Nil
@@ -49,14 +49,14 @@ end
 
 Using that _very_ convenient API, we can build lists:
 
-``` ruby
+```ruby
 >> l = Cons.new(1, Cons.new(2, Cons.new(3, Nil.instance)))
 >> l.to_s # => "(1 . (2 . (3 . Nil)))"
 ```
 
 We know that, in a linked list, adding to the head is O(1), while appending to the end is O(n). So we build algorithms that respect its efficiency guarantees. However, when we, say, map this list into another list, it results in the following situation:
 
-``` ruby "List" https://gist.github.com/dodecaphonic/9934064#file-list-rb
+```ruby
 def do_something_amazing(list, acc = Nil.instance)
   super_value = list.head * 1337
   if list.tail.empty?
@@ -71,7 +71,7 @@ end
 
 Processing things from head to tail means the list ends up reversed. It's common, then, to reverse it back when we're done processing, to preserve the order an external user would expect. Let's add a <code>reverse</code> method to a <code>List</code> helper module:
 
-``` ruby "List" https://gist.github.com/dodecaphonic/9934064#file-list-rb
+```ruby
 module List
   def self.reverse(list, acc = Nil.instance)
     if list.empty?
@@ -85,7 +85,7 @@ end
 
 So when we try to reverse what was created in <code>do_something_amazing</code>, we get what we need:
 
-``` ruby
+```ruby
 List.reverse(do_something_amazing(l)).to_s # => "(1337 . (2674 . (4011 . Nil)))"
 ```
 
@@ -95,7 +95,7 @@ Awesome. I think this is enough for us to start exploring properties. If you're 
 
 Being the good developers we are, we are covering that code with tests:
 
-``` ruby "List Tests" https://gist.github.com/dodecaphonic/9934064#file-list_test-rb
+```ruby
 class ListTest < MiniTest::Test
   def test_reversing_lists
     assert_equal "(3 . (2 . (1 . Nil)))",
@@ -114,7 +114,7 @@ We're pretty confident that's enough, even if it was kind of boring to do manual
 
 First, we'll need something like QuickCheck in Ruby. The best, most idiomatic, most maintained, least-Monad-y thing I have found is [Rantly][rantly]. It has both primitive value generation built-in and property testing with shrinking. We'll skip over the basic API and go straight to defining a property to check if my algorithm is really bullet-proof. To aid in the creation of lists from Arrays, we'll add a new helper:
 
-``` ruby "List" https://gist.github.com/dodecaphonic/9934064#file-list-rb
+```ruby
 module List
   # ...
   def self.from_values(*values)
@@ -125,7 +125,7 @@ end
 
 To check that it works, let's change the existing tests and see if they still pass:
 
-``` ruby "List Tests" https://gist.github.com/dodecaphonic/9934064#file-list_test-rb
+```ruby
 class ListTest < MiniTest::Test
   def test_reversing_lists
     assert_equal "(3 . (2 . (1 . Nil)))",
@@ -152,7 +152,7 @@ Finished in 0.001256s, 796.1783 runs/s, 3184.7134 assertions/s.
 
 Great. Now to the newfangled thing. As I mentioned before, writing a property to check requires us to think differently than we would with regular unit tests. Your formulation should state something logical, something that does not rely on specific inputs. Following that guideline, we can reason about reversing lists in the following manner:
 
-``` ruby "List Tests" https://gist.github.com/dodecaphonic/9934064#file-list2_test-rb
+```ruby
   # ...
   def test_reversing_by_property
     property {
@@ -193,8 +193,7 @@ Let's say you're excited about building your own data structures and want to wra
 
 You build a little more structure into what you already have, adding a <code>prepend</code> method and inlining <code>reverse</code> into a <code>List</code> base class:
 
-```ruby "List 2" https://gist.github.com/dodecaphonic/9934064#file-list2-rb
-
+```ruby
 class List
   def to_s
     raise "Don't use this directly, fool"
@@ -245,7 +244,7 @@ end
 
 To check if an item exists, you add a <code>contains?</code> method:
 
-``` ruby "List with contains" https://gist.github.com/dodecaphonic/9934064#file-list2-rb
+```ruby
 class List
   # ..
   def contains?(v); false; end
@@ -263,7 +262,7 @@ end
 
 Then you write your immutable Set and matching tests:
 
-``` ruby "A dumb set implementation" https://gist.github.com/dodecaphonic/9934064#file-set-rb
+```ruby
 class DumbSet
   def initialize(storage = Nil.instance)
     @storage = storage
@@ -318,7 +317,7 @@ end
 
 And because I spotted you writing new code and yelled "HEY USE RANTLY IT'S SO COOL YIPEE", you add some property tests:
 
-``` ruby 
+```ruby 
 class DumbSetTest < Minitest::Test
   # ...
 def test_contains_property
@@ -366,7 +365,7 @@ Finished in 0.119717s, 33.4121 runs/s, 1720.7247 assertions/s.
 
 You then implement the removal of items:
 
-``` ruby "Set with delete" https://gist.github.com/dodecaphonic/9934064#file-set-rb
+```ruby
 class DumbSet
   # ...
   def delete(v)
@@ -409,7 +408,7 @@ Your tests pass, but this time you don't listen to me about adding another prope
 
 Time goes by, and you've forgotten about me and our little adventure. Your system is humming along and moved on to maintenance mode. Days have been kind of slow, so you decide to add an optimization you've read about in Hacker News, detailing how a node.js program got a 10x speedup. You modify your delete method accordingly:
 
-``` ruby "Set Tests" https://gist.github.com/dodecaphonic/9934064#file-set_test-rb
+```ruby
   # ...
   def delete(v)
     ls  = storage
@@ -434,7 +433,7 @@ A few days later, you receive a report from a User telling she deleted their Pok
 
 And then you remember: what about trying to express a property to see if it holds?
 
-``` ruby
+```ruby
   # We'll add at most 10 unique items and then delete the first
   # 2. If there's anything wrong, this will blow up.
   def test_delete_property

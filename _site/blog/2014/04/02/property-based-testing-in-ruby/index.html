@@ -57,77 +57,70 @@
 
 <p>Let’s say we’ve decided to implement our own linked list class in Ruby. We would probably start our implementation with something like this:</p>
 
-<p>``` ruby “List” https://gist.github.com/dodecaphonic/9934064#file-list-rb
-require “singleton”</p>
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">require</span> <span class="s2">"singleton"</span>
 
-<p>class Nil
-  include Singleton</p>
+<span class="k">class</span> <span class="nc">Nil</span>
+  <span class="kp">include</span> <span class="no">Singleton</span>
+  
+  <span class="k">def</span> <span class="nf">empty?</span><span class="p">;</span> <span class="kp">true</span><span class="p">;</span> <span class="k">end</span>
+  
+  <span class="k">def</span> <span class="nf">to_s</span>
+    <span class="s2">"Nil"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
 
-<p>def empty?; true; end</p>
+<span class="k">class</span> <span class="nc">Cons</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="n">tail</span> <span class="o">=</span> <span class="no">Nil</span><span class="p">.</span><span class="nf">instance</span><span class="p">)</span>
+    <span class="vi">@head</span> <span class="o">=</span> <span class="n">head</span>
+    <span class="vi">@tail</span> <span class="o">=</span> <span class="n">tail</span>
+  <span class="k">end</span>
 
-<p>def to_s
-    “Nil”
-  end
-end</p>
+  <span class="nb">attr_reader</span> <span class="ss">:head</span><span class="p">,</span> <span class="ss">:tail</span>
 
-<p>class Cons
-  def initialize(head, tail = Nil.instance)
-    @head = head
-    @tail = tail
-  end</p>
+  <span class="k">def</span> <span class="nf">empty?</span><span class="p">;</span> <span class="kp">false</span><span class="p">;</span> <span class="k">end</span>
 
-<p>attr_reader :head, :tail</p>
+  <span class="k">def</span> <span class="nf">to_s</span>
+    <span class="s2">"(</span><span class="si">#{</span><span class="n">head</span><span class="si">}</span><span class="s2"> . </span><span class="si">#{</span><span class="n">tail</span><span class="p">.</span><span class="nf">to_s</span><span class="si">}</span><span class="s2">)"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
 
-<p>def empty?; false; end</p>
+<p>Using that <em>very</em> convenient API, we can build lists:</p>
 
-<p>def to_s
-    “(#{head} . #{tail.to_s})”
-  end
-end</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-Using that _very_ convenient API, we can build lists:
-
-``` ruby
-&gt;&gt; l = Cons.new(1, Cons.new(2, Cons.new(3, Nil.instance)))
-&gt;&gt; l.to_s # =&gt; "(1 . (2 . (3 . Nil)))"
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;</span> <span class="n">l</span> <span class="o">=</span> <span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="no">Nil</span><span class="p">.</span><span class="nf">instance</span><span class="p">)))</span>
+<span class="o">&gt;&gt;</span> <span class="n">l</span><span class="p">.</span><span class="nf">to_s</span> <span class="c1"># =&gt; "(1 . (2 . (3 . Nil)))"</span>
 </code></pre></div></div>
 
 <p>We know that, in a linked list, adding to the head is O(1), while appending to the end is O(n). So we build algorithms that respect its efficiency guarantees. However, when we, say, map this list into another list, it results in the following situation:</p>
 
-<p>``` ruby “List” https://gist.github.com/dodecaphonic/9934064#file-list-rb
-def do_something_amazing(list, acc = Nil.instance)
-  super_value = list.head * 1337
-  if list.tail.empty?
-    acc
-  else
-    do_something_amazing(list.tail, List.new(super_value, acc))
-  end
-end</p>
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">do_something_amazing</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">acc</span> <span class="o">=</span> <span class="no">Nil</span><span class="p">.</span><span class="nf">instance</span><span class="p">)</span>
+  <span class="n">super_value</span> <span class="o">=</span> <span class="n">list</span><span class="p">.</span><span class="nf">head</span> <span class="o">*</span> <span class="mi">1337</span>
+  <span class="k">if</span> <span class="n">list</span><span class="p">.</span><span class="nf">tail</span><span class="p">.</span><span class="nf">empty?</span>
+    <span class="n">acc</span>
+  <span class="k">else</span>
+    <span class="n">do_something_amazing</span><span class="p">(</span><span class="n">list</span><span class="p">.</span><span class="nf">tail</span><span class="p">,</span> <span class="no">List</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="n">super_value</span><span class="p">,</span> <span class="n">acc</span><span class="p">))</span>
+  <span class="k">end</span>
+<span class="k">end</span>
 
-<blockquote>
-  <blockquote>
-    <p>do_something(l).to_s # =&gt; “(4011 . (2674 . (1337 . Nil)))”
-```</p>
-  </blockquote>
-</blockquote>
+<span class="o">&gt;&gt;</span> <span class="n">do_something</span><span class="p">(</span><span class="n">l</span><span class="p">).</span><span class="nf">to_s</span> <span class="c1"># =&gt; "(4011 . (2674 . (1337 . Nil)))"</span>
+</code></pre></div></div>
 
 <p>Processing things from head to tail means the list ends up reversed. It’s common, then, to reverse it back when we’re done processing, to preserve the order an external user would expect. Let’s add a <code>reverse</code> method to a <code>List</code> helper module:</p>
 
-<p>``` ruby “List” https://gist.github.com/dodecaphonic/9934064#file-list-rb
-module List
-  def self.reverse(list, acc = Nil.instance)
-    if list.empty?
-      acc
-    else
-      reverse(list.tail, Cons.new(list.head, acc))
-    end
-  end
-end</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-So when we try to reverse what was created in &lt;code&gt;do_something_amazing&lt;/code&gt;, we get what we need:
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">module</span> <span class="nn">List</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">reverse</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">acc</span> <span class="o">=</span> <span class="no">Nil</span><span class="p">.</span><span class="nf">instance</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">list</span><span class="p">.</span><span class="nf">empty?</span>
+      <span class="n">acc</span>
+    <span class="k">else</span>
+      <span class="n">reverse</span><span class="p">(</span><span class="n">list</span><span class="p">.</span><span class="nf">tail</span><span class="p">,</span> <span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="n">list</span><span class="p">.</span><span class="nf">head</span><span class="p">,</span> <span class="n">acc</span><span class="p">))</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
 
-``` ruby
-List.reverse(do_something_amazing(l)).to_s # =&gt; "(1337 . (2674 . (4011 . Nil)))"
+<p>So when we try to reverse what was created in <code>do_something_amazing</code>, we get what we need:</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="no">List</span><span class="p">.</span><span class="nf">reverse</span><span class="p">(</span><span class="n">do_something_amazing</span><span class="p">(</span><span class="n">l</span><span class="p">)).</span><span class="nf">to_s</span> <span class="c1"># =&gt; "(1337 . (2674 . (4011 . Nil)))"</span>
 </code></pre></div></div>
 
 <p>Awesome. I think this is enough for us to start exploring properties. If you’re getting bored, take a sip of coffee and come back when you’re ready. There’s a few cool tricks below the fold.</p>
@@ -136,71 +129,69 @@ List.reverse(do_something_amazing(l)).to_s # =&gt; "(1337 . (2674 . (4011 . Nil)
 
 <p>Being the good developers we are, we are covering that code with tests:</p>
 
-<p>``` ruby “List Tests” https://gist.github.com/dodecaphonic/9934064#file-list_test-rb
-class ListTest &lt; MiniTest::Test
-  def test_reversing_lists
-    assert_equal “(3 . (2 . (1 . Nil)))”,
-      List.reverse(Cons.new(1, Cons.new(2, Cons.new(3)))).to_s
-    assert_equal “(9 . (400 . (321 . (1 . (10 . Nil)))))”,
-      List.reverse(Cons.new(10, Cons.new(1, Cons.new(321, Cons.new(400, Cons.new(9)))))).to_s
-    assert_equal “Nil”, List.reverse(Nil.instance).to_s
-    assert_equal “(1 . Nil)”, List.reverse(Cons.new(1)).to_s
-  end
-end</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-We're pretty confident that's enough, even if it was kind of boring to do manually. That amount of testing would let us go home and sleep soundly.
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">ListTest</span> <span class="o">&lt;</span> <span class="no">MiniTest</span><span class="o">::</span><span class="no">Test</span>
+  <span class="k">def</span> <span class="nf">test_reversing_lists</span>
+    <span class="n">assert_equal</span> <span class="s2">"(3 . (2 . (1 . Nil)))"</span><span class="p">,</span>
+      <span class="no">List</span><span class="p">.</span><span class="nf">reverse</span><span class="p">(</span><span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">3</span><span class="p">)))).</span><span class="nf">to_s</span>
+    <span class="n">assert_equal</span> <span class="s2">"(9 . (400 . (321 . (1 . (10 . Nil)))))"</span><span class="p">,</span>
+      <span class="no">List</span><span class="p">.</span><span class="nf">reverse</span><span class="p">(</span><span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">321</span><span class="p">,</span> <span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">9</span><span class="p">)))))).</span><span class="nf">to_s</span>
+    <span class="n">assert_equal</span> <span class="s2">"Nil"</span><span class="p">,</span> <span class="no">List</span><span class="p">.</span><span class="nf">reverse</span><span class="p">(</span><span class="no">Nil</span><span class="p">.</span><span class="nf">instance</span><span class="p">).</span><span class="nf">to_s</span>
+    <span class="n">assert_equal</span> <span class="s2">"(1 . Nil)"</span><span class="p">,</span> <span class="no">List</span><span class="p">.</span><span class="nf">reverse</span><span class="p">(</span><span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">1</span><span class="p">)).</span><span class="nf">to_s</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
 
-## Testing the QuickCheck way
+<p>We’re pretty confident that’s enough, even if it was kind of boring to do manually. That amount of testing would let us go home and sleep soundly.</p>
 
-First, we'll need something like QuickCheck in Ruby. The best, most idiomatic, most maintained, least-Monad-y thing I have found is [Rantly][rantly]. It has both primitive value generation built-in and property testing with shrinking. We'll skip over the basic API and go straight to defining a property to check if my algorithm is really bullet-proof. To aid in the creation of lists from Arrays, we'll add a new helper:
+<h2 id="testing-the-quickcheck-way">Testing the QuickCheck way</h2>
 
-``` ruby "List" https://gist.github.com/dodecaphonic/9934064#file-list-rb
-module List
-  # ...
-  def self.from_values(*values)
-    values.reverse.inject(Nil.instance) { |ls, v| Cons.new(v, ls) }
-  end
-end
+<p>First, we’ll need something like QuickCheck in Ruby. The best, most idiomatic, most maintained, least-Monad-y thing I have found is <a href="https://github.com/hayeah/rantly">Rantly</a>. It has both primitive value generation built-in and property testing with shrinking. We’ll skip over the basic API and go straight to defining a property to check if my algorithm is really bullet-proof. To aid in the creation of lists from Arrays, we’ll add a new helper:</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">module</span> <span class="nn">List</span>
+  <span class="c1"># ...</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">from_values</span><span class="p">(</span><span class="o">*</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">values</span><span class="p">.</span><span class="nf">reverse</span><span class="p">.</span><span class="nf">inject</span><span class="p">(</span><span class="no">Nil</span><span class="p">.</span><span class="nf">instance</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">ls</span><span class="p">,</span> <span class="n">v</span><span class="o">|</span> <span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">ls</span><span class="p">)</span> <span class="p">}</span>
+  <span class="k">end</span>
+<span class="k">end</span>
 </code></pre></div></div>
 
 <p>To check that it works, let’s change the existing tests and see if they still pass:</p>
 
-<p>``` ruby “List Tests” https://gist.github.com/dodecaphonic/9934064#file-list_test-rb
-class ListTest &lt; MiniTest::Test
-  def test_reversing_lists
-    assert_equal “(3 . (2 . (1 . Nil)))”,
-      List.reverse(List.from_values(1, 2, 3)).to_s
-    assert_equal “(9 . (400 . (321 . (1 . (10 . Nil)))))”,
-      List.reverse(List.from_values(10, 1, 321, 400, 9)).to_s
-    assert_equal “Nil”, List.reverse(Nil.instance).to_s
-    assert_equal “(1 . Nil)”, List.reverse(List.from_values(1)).to_s
-  end
-end</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">ListTest</span> <span class="o">&lt;</span> <span class="no">MiniTest</span><span class="o">::</span><span class="no">Test</span>
+  <span class="k">def</span> <span class="nf">test_reversing_lists</span>
+    <span class="n">assert_equal</span> <span class="s2">"(3 . (2 . (1 . Nil)))"</span><span class="p">,</span>
+      <span class="no">List</span><span class="p">.</span><span class="nf">reverse</span><span class="p">(</span><span class="no">List</span><span class="p">.</span><span class="nf">from_values</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)).</span><span class="nf">to_s</span>
+    <span class="n">assert_equal</span> <span class="s2">"(9 . (400 . (321 . (1 . (10 . Nil)))))"</span><span class="p">,</span>
+      <span class="no">List</span><span class="p">.</span><span class="nf">reverse</span><span class="p">(</span><span class="no">List</span><span class="p">.</span><span class="nf">from_values</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">321</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="mi">9</span><span class="p">)).</span><span class="nf">to_s</span>
+    <span class="n">assert_equal</span> <span class="s2">"Nil"</span><span class="p">,</span> <span class="no">List</span><span class="p">.</span><span class="nf">reverse</span><span class="p">(</span><span class="no">Nil</span><span class="p">.</span><span class="nf">instance</span><span class="p">).</span><span class="nf">to_s</span>
+    <span class="n">assert_equal</span> <span class="s2">"(1 . Nil)"</span><span class="p">,</span> <span class="no">List</span><span class="p">.</span><span class="nf">reverse</span><span class="p">(</span><span class="no">List</span><span class="p">.</span><span class="nf">from_values</span><span class="p">(</span><span class="mi">1</span><span class="p">)).</span><span class="nf">to_s</span>
+  <span class="k">end</span>
+<span class="k">end</span>
 </code></pre></div></div>
-<p>Run options: –seed 48889</p>
 
-<h1 id="running">Running:</h1>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Run options: --seed 48889
 
-<p>.</p>
+# Running:
 
-<p>Finished in 0.001256s, 796.1783 runs/s, 3184.7134 assertions/s.</p>
+.
 
-<p>1 runs, 4 assertions, 0 failures, 0 errors, 0 skips</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-Great. Now to the newfangled thing. As I mentioned before, writing a property to check requires us to think differently than we would with regular unit tests. Your formulation should state something logical, something that does not rely on specific inputs. Following that guideline, we can reason about reversing lists in the following manner:
+Finished in 0.001256s, 796.1783 runs/s, 3184.7134 assertions/s.
 
-``` ruby "List Tests" https://gist.github.com/dodecaphonic/9934064#file-list2_test-rb
-  # ...
-  def test_reversing_by_property
-    property {
-      length = range(0, 1_000_000)
-      List.from_values(array(length) { integer })
-    }.check { |list|
-      assert_equal list.to_s, List.reverse(List.reverse(list)).to_s
-    }
-  end
-  # ...
+1 runs, 4 assertions, 0 failures, 0 errors, 0 skips
+</code></pre></div></div>
+
+<p>Great. Now to the newfangled thing. As I mentioned before, writing a property to check requires us to think differently than we would with regular unit tests. Your formulation should state something logical, something that does not rely on specific inputs. Following that guideline, we can reason about reversing lists in the following manner:</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># ...</span>
+  <span class="k">def</span> <span class="nf">test_reversing_by_property</span>
+    <span class="n">property</span> <span class="p">{</span>
+      <span class="n">length</span> <span class="o">=</span> <span class="n">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1_000_000</span><span class="p">)</span>
+      <span class="no">List</span><span class="p">.</span><span class="nf">from_values</span><span class="p">(</span><span class="n">array</span><span class="p">(</span><span class="n">length</span><span class="p">)</span> <span class="p">{</span> <span class="n">integer</span> <span class="p">})</span>
+    <span class="p">}.</span><span class="nf">check</span> <span class="p">{</span> <span class="o">|</span><span class="n">list</span><span class="o">|</span>
+      <span class="n">assert_equal</span> <span class="n">list</span><span class="p">.</span><span class="nf">to_s</span><span class="p">,</span> <span class="no">List</span><span class="p">.</span><span class="nf">reverse</span><span class="p">(</span><span class="no">List</span><span class="p">.</span><span class="nf">reverse</span><span class="p">(</span><span class="n">list</span><span class="p">)).</span><span class="nf">to_s</span>
+    <span class="p">}</span>
+  <span class="k">end</span>
+  <span class="c1"># ...</span>
 </code></pre></div></div>
 
 <p>The meat is in the <code>check</code> block. Determining that a list has been reversed correctly requires us to check if reversing it again gets us back to the original list. To seed our check, we build a <code>property</code> block that creats an array with a random length between 0 and 1_000_000, itself filled with random integers. Let’s run the tests again:</p>
@@ -230,152 +221,149 @@ Finished in 121.969127s, 0.0164 runs/s, 0.8527 assertions/s.
 
 <p>You build a little more structure into what you already have, adding a <code>prepend</code> method and inlining <code>reverse</code> into a <code>List</code> base class:</p>
 
-<p>```ruby “List 2” https://gist.github.com/dodecaphonic/9934064#file-list2-rb</p>
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">List</span>
+  <span class="k">def</span> <span class="nf">to_s</span>
+    <span class="k">raise</span> <span class="s2">"Don't use this directly, fool"</span>
+  <span class="k">end</span>
 
-<p>class List
-  def to_s
-    raise “Don’t use this directly, fool”
-  end</p>
+  <span class="k">def</span> <span class="nf">empty?</span><span class="p">;</span> <span class="kp">true</span><span class="p">;</span> <span class="k">end</span>
 
-<p>def empty?; true; end</p>
+  <span class="k">def</span> <span class="nf">prepend</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">self</span><span class="p">)</span>
+  <span class="k">end</span>
 
-<p>def prepend(v)
-    Cons.new(v, self)
-  end</p>
+  <span class="k">def</span> <span class="nf">reverse</span><span class="p">(</span><span class="n">acc</span> <span class="o">=</span> <span class="no">Nil</span><span class="p">.</span><span class="nf">instance</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">empty?</span>
+      <span class="n">acc</span>
+    <span class="k">else</span>
+      <span class="n">tail</span><span class="p">.</span><span class="nf">reverse</span><span class="p">(</span><span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="n">acc</span><span class="p">))</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-<p>def reverse(acc = Nil.instance)
-    if empty?
-      acc
-    else
-      tail.reverse(Cons.new(head, acc))
-    end
-  end</p>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">from_values</span><span class="p">(</span><span class="o">*</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">values</span><span class="p">.</span><span class="nf">reverse</span><span class="p">.</span><span class="nf">inject</span><span class="p">(</span><span class="no">Nil</span><span class="p">.</span><span class="nf">instance</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">ls</span><span class="p">,</span> <span class="n">v</span><span class="o">|</span> <span class="no">Cons</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">ls</span><span class="p">)</span> <span class="p">}</span>
+  <span class="k">end</span>  
+<span class="k">end</span>
 
-<p>def self.from_values(*values)
-    values.reverse.inject(Nil.instance) { |ls, v| Cons.new(v, ls) }
-  end<br />
-end</p>
+<span class="k">class</span> <span class="nc">Nil</span> <span class="o">&lt;</span> <span class="no">List</span>
+  <span class="kp">include</span> <span class="no">Singleton</span>
 
-<p>class Nil &lt; List
-  include Singleton</p>
+  <span class="k">def</span> <span class="nf">to_s</span>
+    <span class="s2">"Nil"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
 
-<p>def to_s
-    “Nil”
-  end
-end</p>
+<span class="k">class</span> <span class="nc">Cons</span> <span class="o">&lt;</span> <span class="no">List</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="n">tail</span> <span class="o">=</span> <span class="no">Nil</span><span class="p">.</span><span class="nf">instance</span><span class="p">)</span>
+    <span class="vi">@head</span> <span class="o">=</span> <span class="n">head</span>
+    <span class="vi">@tail</span> <span class="o">=</span> <span class="n">tail</span>
+  <span class="k">end</span>
 
-<p>class Cons &lt; List
-  def initialize(head, tail = Nil.instance)
-    @head = head
-    @tail = tail
-  end</p>
+  <span class="nb">attr_reader</span> <span class="ss">:head</span><span class="p">,</span> <span class="ss">:tail</span>
 
-<p>attr_reader :head, :tail</p>
+  <span class="k">def</span> <span class="nf">empty?</span><span class="p">;</span> <span class="kp">false</span><span class="p">;</span> <span class="k">end</span>
 
-<p>def empty?; false; end</p>
+  <span class="k">def</span> <span class="nf">to_s</span>
+    <span class="s2">"(</span><span class="si">#{</span><span class="n">head</span><span class="si">}</span><span class="s2"> . </span><span class="si">#{</span><span class="n">tail</span><span class="p">.</span><span class="nf">to_s</span><span class="si">}</span><span class="s2">)"</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
 
-<p>def to_s
-    “(#{head} . #{tail.to_s})”
-  end
-end</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-To check if an item exists, you add a &lt;code&gt;contains?&lt;/code&gt; method:
+<p>To check if an item exists, you add a <code>contains?</code> method:</p>
 
-``` ruby "List with contains" https://gist.github.com/dodecaphonic/9934064#file-list2-rb
-class List
-  # ..
-  def contains?(v); false; end
-  # ..
-end
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">List</span>
+  <span class="c1"># ..</span>
+  <span class="k">def</span> <span class="nf">contains?</span><span class="p">(</span><span class="n">v</span><span class="p">);</span> <span class="kp">false</span><span class="p">;</span> <span class="k">end</span>
+  <span class="c1"># ..</span>
+<span class="k">end</span>
 
-class Cons &lt; List
-  # ..
-  def contains?(v)
-    head == v || tail.contains?(v)
-  end
-  # ..
-end
+<span class="k">class</span> <span class="nc">Cons</span> <span class="o">&lt;</span> <span class="no">List</span>
+  <span class="c1"># ..</span>
+  <span class="k">def</span> <span class="nf">contains?</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">head</span> <span class="o">==</span> <span class="n">v</span> <span class="o">||</span> <span class="n">tail</span><span class="p">.</span><span class="nf">contains?</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+  <span class="k">end</span>
+  <span class="c1"># ..</span>
+<span class="k">end</span>
 </code></pre></div></div>
 
 <p>Then you write your immutable Set and matching tests:</p>
 
-<p>``` ruby “A dumb set implementation” https://gist.github.com/dodecaphonic/9934064#file-set-rb
-class DumbSet
-  def initialize(storage = Nil.instance)
-    @storage = storage
-  end</p>
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">DumbSet</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">storage</span> <span class="o">=</span> <span class="no">Nil</span><span class="p">.</span><span class="nf">instance</span><span class="p">)</span>
+    <span class="vi">@storage</span> <span class="o">=</span> <span class="n">storage</span>
+  <span class="k">end</span>
 
-<p>attr_reader :storage
-  private     :storage</p>
+  <span class="nb">attr_reader</span> <span class="ss">:storage</span>
+  <span class="kp">private</span>     <span class="ss">:storage</span>
 
-<p>def push(v)
-    if !storage.contains?(v)
-      DumbSet.new(storage.prepend(v))
-    else
-      self
-    end
-  end
-  alias_method :«, :push</p>
+  <span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="k">if</span> <span class="o">!</span><span class="n">storage</span><span class="p">.</span><span class="nf">contains?</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+      <span class="no">DumbSet</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="n">storage</span><span class="p">.</span><span class="nf">prepend</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+    <span class="k">else</span>
+      <span class="nb">self</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+  <span class="kp">alias_method</span> <span class="ss">:&lt;&lt;</span><span class="p">,</span> <span class="ss">:push</span>
 
-<p>def contains?(v)
-    storage.contains?(v)
-  end</p>
+  <span class="k">def</span> <span class="nf">contains?</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">storage</span><span class="p">.</span><span class="nf">contains?</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+  <span class="k">end</span>
 
-<p>def to_a
-    values = []
-    list   = storage
-    until list.empty?
-      values « list.head
-      list = list.tail
-    end
-    values
-  end
-end</p>
+  <span class="k">def</span> <span class="nf">to_a</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">list</span>   <span class="o">=</span> <span class="n">storage</span>
+    <span class="k">until</span> <span class="n">list</span><span class="p">.</span><span class="nf">empty?</span>
+      <span class="n">values</span> <span class="o">&lt;&lt;</span> <span class="n">list</span><span class="p">.</span><span class="nf">head</span>
+      <span class="n">list</span> <span class="o">=</span> <span class="n">list</span><span class="p">.</span><span class="nf">tail</span>
+    <span class="k">end</span>
+    <span class="n">values</span>
+  <span class="k">end</span>
+<span class="k">end</span>
 
-<p>class DumbSetTest &lt; Minitest::Test
-  def setup
-    @s = (((DumbSet.new « 1) « 2) « 3)
-  end</p>
+<span class="k">class</span> <span class="nc">DumbSetTest</span> <span class="o">&lt;</span> <span class="no">Minitest</span><span class="o">::</span><span class="no">Test</span>
+  <span class="k">def</span> <span class="nf">setup</span>
+    <span class="vi">@s</span> <span class="o">=</span> <span class="p">(((</span><span class="no">DumbSet</span><span class="p">.</span><span class="nf">new</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span><span class="p">)</span>
+  <span class="k">end</span>
 
-<p>attr_reader :s</p>
+  <span class="nb">attr_reader</span> <span class="ss">:s</span>
 
-<p>def test_contains
-    assert s.contains?(3)
-    assert s.contains?(2)
-    assert s.contains?(1)
-    assert !s.contains?(4)
-  end</p>
+  <span class="k">def</span> <span class="nf">test_contains</span>
+    <span class="n">assert</span> <span class="n">s</span><span class="p">.</span><span class="nf">contains?</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">assert</span> <span class="n">s</span><span class="p">.</span><span class="nf">contains?</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">assert</span> <span class="n">s</span><span class="p">.</span><span class="nf">contains?</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">assert</span> <span class="o">!</span><span class="n">s</span><span class="p">.</span><span class="nf">contains?</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+  <span class="k">end</span>
 
-<p>def test_uniqueness
-    assert_equal [-32, 1, 2, 3], (s « -32 « -32 « -32).to_a.sort
-  end
-end</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-And because I spotted you writing new code and yelled "HEY USE RANTLY IT'S SO COOL YIPEE", you add some property tests:
+  <span class="k">def</span> <span class="nf">test_uniqueness</span>
+    <span class="n">assert_equal</span> <span class="p">[</span><span class="o">-</span><span class="mi">32</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">(</span><span class="n">s</span> <span class="o">&lt;&lt;</span> <span class="o">-</span><span class="mi">32</span> <span class="o">&lt;&lt;</span> <span class="o">-</span><span class="mi">32</span> <span class="o">&lt;&lt;</span> <span class="o">-</span><span class="mi">32</span><span class="p">).</span><span class="nf">to_a</span><span class="p">.</span><span class="nf">sort</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
 
-``` ruby 
-class DumbSetTest &lt; Minitest::Test
-  # ...
-def test_contains_property
-    property {
-      array(range(0, 100)) { integer }
-    }.check { |vs|
-      s = vs.inject(DumbSet.new) { |ds, v| ds &lt;&lt; v }
-      assert vs.all? { |v| s.contains?(v) }
-    }
-  end
+<p>And because I spotted you writing new code and yelled “HEY USE RANTLY IT’S SO COOL YIPEE”, you add some property tests:</p>
 
-  def test_uniqueness_property
-    property {
-      array(range(0, 100)) { integer }
-    }.check { |vs|
-      ns = vs.inject(DumbSet.new) { |ds, v| ds &lt;&lt; v }
-      rs = vs.inject(ns) { |ds, v| ds &lt;&lt; v }
-      assert_equal vs.sort, ns.to_a.sort
-    }
-  end
-  # ...
-end  
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">DumbSetTest</span> <span class="o">&lt;</span> <span class="no">Minitest</span><span class="o">::</span><span class="no">Test</span>
+  <span class="c1"># ...</span>
+<span class="k">def</span> <span class="nf">test_contains_property</span>
+    <span class="n">property</span> <span class="p">{</span>
+      <span class="n">array</span><span class="p">(</span><span class="n">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span> <span class="p">{</span> <span class="n">integer</span> <span class="p">}</span>
+    <span class="p">}.</span><span class="nf">check</span> <span class="p">{</span> <span class="o">|</span><span class="n">vs</span><span class="o">|</span>
+      <span class="n">s</span> <span class="o">=</span> <span class="n">vs</span><span class="p">.</span><span class="nf">inject</span><span class="p">(</span><span class="no">DumbSet</span><span class="p">.</span><span class="nf">new</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">ds</span><span class="p">,</span> <span class="n">v</span><span class="o">|</span> <span class="n">ds</span> <span class="o">&lt;&lt;</span> <span class="n">v</span> <span class="p">}</span>
+      <span class="n">assert</span> <span class="n">vs</span><span class="p">.</span><span class="nf">all?</span> <span class="p">{</span> <span class="o">|</span><span class="n">v</span><span class="o">|</span> <span class="n">s</span><span class="p">.</span><span class="nf">contains?</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">test_uniqueness_property</span>
+    <span class="n">property</span> <span class="p">{</span>
+      <span class="n">array</span><span class="p">(</span><span class="n">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span> <span class="p">{</span> <span class="n">integer</span> <span class="p">}</span>
+    <span class="p">}.</span><span class="nf">check</span> <span class="p">{</span> <span class="o">|</span><span class="n">vs</span><span class="o">|</span>
+      <span class="n">ns</span> <span class="o">=</span> <span class="n">vs</span><span class="p">.</span><span class="nf">inject</span><span class="p">(</span><span class="no">DumbSet</span><span class="p">.</span><span class="nf">new</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">ds</span><span class="p">,</span> <span class="n">v</span><span class="o">|</span> <span class="n">ds</span> <span class="o">&lt;&lt;</span> <span class="n">v</span> <span class="p">}</span>
+      <span class="n">rs</span> <span class="o">=</span> <span class="n">vs</span><span class="p">.</span><span class="nf">inject</span><span class="p">(</span><span class="n">ns</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">ds</span><span class="p">,</span> <span class="n">v</span><span class="o">|</span> <span class="n">ds</span> <span class="o">&lt;&lt;</span> <span class="n">v</span> <span class="p">}</span>
+      <span class="n">assert_equal</span> <span class="n">vs</span><span class="p">.</span><span class="nf">sort</span><span class="p">,</span> <span class="n">ns</span><span class="p">.</span><span class="nf">to_a</span><span class="p">.</span><span class="nf">sort</span>
+    <span class="p">}</span>
+  <span class="k">end</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>  
 </code></pre></div></div>
 
 <p>It looks good:</p>
@@ -400,63 +388,64 @@ Finished in 0.119717s, 33.4121 runs/s, 1720.7247 assertions/s.
 
 <p>You then implement the removal of items:</p>
 
-<p>``` ruby “Set with delete” https://gist.github.com/dodecaphonic/9934064#file-set-rb
-class DumbSet
-  # …
-  def delete(v)
-    ls = storage
-    ns = DumbSet.new</p>
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">DumbSet</span>
+  <span class="c1"># ...</span>
+  <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">ls</span> <span class="o">=</span> <span class="n">storage</span>
+    <span class="n">ns</span> <span class="o">=</span> <span class="no">DumbSet</span><span class="p">.</span><span class="nf">new</span>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>while !ls.empty?
-  if ls.head != v
-    ns = ns &lt;&lt; v
-  end
+    <span class="k">while</span> <span class="o">!</span><span class="n">ls</span><span class="p">.</span><span class="nf">empty?</span>
+      <span class="k">if</span> <span class="n">ls</span><span class="p">.</span><span class="nf">head</span> <span class="o">!=</span> <span class="n">v</span>
+        <span class="n">ns</span> <span class="o">=</span> <span class="n">ns</span> <span class="o">&lt;&lt;</span> <span class="n">v</span>
+      <span class="k">end</span>
 
-  ls = ls.tail
-end
+      <span class="n">ls</span> <span class="o">=</span> <span class="n">ls</span><span class="p">.</span><span class="nf">tail</span>
+    <span class="k">end</span>
 
-ns   end   # ... end
+    <span class="n">ns</span>
+  <span class="k">end</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
+
+<span class="k">class</span> <span class="nc">DumbSetTest</span> <span class="o">&lt;</span> <span class="no">Minitest</span><span class="o">::</span><span class="no">TestCase</span>
+  <span class="c1"># ...</span>
+  <span class="k">def</span> <span class="nf">test_delete</span>
+    <span class="n">os</span> <span class="o">=</span> <span class="p">(((</span><span class="no">DumbSet</span><span class="p">.</span><span class="nf">new</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">ns</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="nf">delete</span><span class="p">(</span><span class="mi">1337</span><span class="p">)</span>
+    <span class="n">assert_equal</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">ns</span><span class="p">.</span><span class="nf">to_a</span><span class="p">.</span><span class="nf">sort</span>
+    <span class="n">ns</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="nf">delete</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">assert_equal</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">ns</span><span class="p">.</span><span class="nf">to_a</span><span class="p">.</span><span class="nf">sort</span>
+    <span class="n">ns</span> <span class="o">=</span> <span class="n">ns</span><span class="p">.</span><span class="nf">delete</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">assert_equal</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ns</span><span class="p">.</span><span class="nf">to_a</span><span class="p">.</span><span class="nf">sort</span>
+    <span class="n">ns</span> <span class="o">=</span> <span class="p">(</span><span class="n">ns</span> <span class="o">&lt;&lt;</span> <span class="mi">432</span><span class="p">).</span><span class="nf">delete</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">assert_equal</span> <span class="p">[</span><span class="mi">432</span><span class="p">],</span> <span class="n">ns</span><span class="p">.</span><span class="nf">to_a</span><span class="p">.</span><span class="nf">sort</span>
+    <span class="n">ns</span> <span class="o">=</span> <span class="n">ns</span><span class="p">.</span><span class="nf">delete</span><span class="p">(</span><span class="mi">432</span><span class="p">)</span>
+    <span class="n">assert_equal</span> <span class="p">[],</span> <span class="n">ns</span><span class="p">.</span><span class="nf">to_a</span><span class="p">.</span><span class="nf">sort</span>
+  <span class="k">end</span>
+  <span class="c1"># ...</span>
+<span class="k">end</span>
 </code></pre></div></div>
 
-<p>class DumbSetTest &lt; Minitest::TestCase
-  # …
-  def test_delete
-    os = (((DumbSet.new « 1) « 2) « 3)
-    ns = os.delete(1337)
-    assert_equal [1, 2, 3], ns.to_a.sort
-    ns = os.delete(3)
-    assert_equal [1, 2], ns.to_a.sort
-    ns = ns.delete(2)
-    assert_equal [1], ns.to_a.sort
-    ns = (ns « 432).delete(1)
-    assert_equal [432], ns.to_a.sort
-    ns = ns.delete(432)
-    assert_equal [], ns.to_a.sort
-  end
-  # …
-end</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-Your tests pass, but this time you don't listen to me about adding another property. You're just not that convinced they're worth their salt, and it looks good enough to ship with all the tests you've added. The Pokémon Collecting app you work on can benefit from it right now, instead of 20 minutes from now. To production it goes.
+<p>Your tests pass, but this time you don’t listen to me about adding another property. You’re just not that convinced they’re worth their salt, and it looks good enough to ship with all the tests you’ve added. The Pokémon Collecting app you work on can benefit from it right now, instead of 20 minutes from now. To production it goes.</p>
 
-Time goes by, and you've forgotten about me and our little adventure. Your system is humming along and moved on to maintenance mode. Days have been kind of slow, so you decide to add an optimization you've read about in Hacker News, detailing how a node.js program got a 10x speedup. You modify your delete method accordingly:
+<p>Time goes by, and you’ve forgotten about me and our little adventure. Your system is humming along and moved on to maintenance mode. Days have been kind of slow, so you decide to add an optimization you’ve read about in Hacker News, detailing how a node.js program got a 10x speedup. You modify your delete method accordingly:</p>
 
-``` ruby "Set Tests" https://gist.github.com/dodecaphonic/9934064#file-set_test-rb
-  # ...
-  def delete(v)
-    ls  = storage
-    tmp = DumbSet.new
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># ...</span>
+  <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">ls</span>  <span class="o">=</span> <span class="n">storage</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="no">DumbSet</span><span class="p">.</span><span class="nf">new</span>
 
-    while !ls.empty?
-      if (ls.head != v) &amp;&amp; (ls.head &lt; 1500) # secret performance trick
-        tmp = tmp &lt;&lt; ls.head
-      end
+    <span class="k">while</span> <span class="o">!</span><span class="n">ls</span><span class="p">.</span><span class="nf">empty?</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">ls</span><span class="p">.</span><span class="nf">head</span> <span class="o">!=</span> <span class="n">v</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">ls</span><span class="p">.</span><span class="nf">head</span> <span class="o">&lt;</span> <span class="mi">1500</span><span class="p">)</span> <span class="c1"># secret performance trick</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span> <span class="o">&lt;&lt;</span> <span class="n">ls</span><span class="p">.</span><span class="nf">head</span>
+      <span class="k">end</span>
 
-      ls = ls.tail
-    end
+      <span class="n">ls</span> <span class="o">=</span> <span class="n">ls</span><span class="p">.</span><span class="nf">tail</span>
+    <span class="k">end</span>
 
-    tmp
-  end
-  # ...
+    <span class="n">tmp</span>
+  <span class="k">end</span>
+  <span class="c1"># ...</span>
 </code></pre></div></div>
 
 <p>CI still reports all green.</p>
