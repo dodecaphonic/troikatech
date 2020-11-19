@@ -7,15 +7,15 @@
 <meta name="generator" content="Jekyll v3.8.5" />
 <meta property="og:title" content="fp-ts overview: Error handling, the functional way (part 1)" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="In most codebases, error-handling means exceptions. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be to signify something in the application domain went wrong." />
-<meta property="og:description" content="In most codebases, error-handling means exceptions. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be to signify something in the application domain went wrong." />
+<meta name="description" content="In most codebases, error-handling means exceptions. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be used to signify something in the application domain went wrong." />
+<meta property="og:description" content="In most codebases, error-handling means exceptions. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be used to signify something in the application domain went wrong." />
 <link rel="canonical" href="http://localhost:4000/blog/2020/09/24/fp-ts-error-handling-the-functional-way/" />
 <meta property="og:url" content="http://localhost:4000/blog/2020/09/24/fp-ts-error-handling-the-functional-way/" />
 <meta property="og:site_name" content="Troika Tech" />
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2020-09-24T10:15:00-03:00" />
 <script type="application/ld+json">
-{"headline":"fp-ts overview: Error handling, the functional way (part 1)","dateModified":"2020-09-24T10:15:00-03:00","datePublished":"2020-09-24T10:15:00-03:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/blog/2020/09/24/fp-ts-error-handling-the-functional-way/"},"url":"http://localhost:4000/blog/2020/09/24/fp-ts-error-handling-the-functional-way/","description":"In most codebases, error-handling means exceptions. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be to signify something in the application domain went wrong.","@type":"BlogPosting","@context":"http://schema.org"}</script>
+{"headline":"fp-ts overview: Error handling, the functional way (part 1)","dateModified":"2020-09-24T10:15:00-03:00","datePublished":"2020-09-24T10:15:00-03:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/blog/2020/09/24/fp-ts-error-handling-the-functional-way/"},"url":"http://localhost:4000/blog/2020/09/24/fp-ts-error-handling-the-functional-way/","description":"In most codebases, error-handling means exceptions. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be used to signify something in the application domain went wrong.","@type":"BlogPosting","@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Troika Tech" /></head>
 <body><header class="site-header" role="banner">
@@ -45,9 +45,9 @@
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <p>In most codebases, error-handling means <em>exceptions</em>. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be to signify something in the application domain went wrong.</p>
+    <p>In most codebases, error-handling means <em>exceptions</em>. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be used to signify something in the application domain went wrong.</p>
 
-<p>The fact exceptions can come from deep within the call stack and bubble up very far from their point of origin often make debugging them hard. They also affect code reuse, as every path that includes exception-throwing code also becomes exceptional — a fact that is usually hidden and forces (careful and caring) developers to perpetually keep documentation up-to-date at every level of the affected call stack to avoid surprising behavior.</p>
+<p>The fact exceptions can come from deep within the call stack and bubble up very far from their point of origin often makes debugging them hard. They also affect code reuse, as every path that includes exception-throwing code also becomes exceptional — a fact that is usually hidden and forces (careful and caring) developers to perpetually keep documentation up-to-date at every level of the affected call stack to avoid surprising behavior.</p>
 
 <p>Thinking about the matter might lead us to two conclusions:</p>
 

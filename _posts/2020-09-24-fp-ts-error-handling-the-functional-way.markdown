@@ -15,9 +15,9 @@ tags:
   - either
 ---
 
-In most codebases, error-handling means _exceptions_. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be to signify something in the application domain went wrong.
+In most codebases, error-handling means _exceptions_. A team will carefully considering potential problems, then create sets of exceptions by extending some error class that will be used to signify something in the application domain went wrong.
 
-The fact exceptions can come from deep within the call stack and bubble up very far from their point of origin often make debugging them hard. They also affect code reuse, as every path that includes exception-throwing code also becomes exceptional — a fact that is usually hidden and forces (careful and caring) developers to perpetually keep documentation up-to-date at every level of the affected call stack to avoid surprising behavior.
+The fact exceptions can come from deep within the call stack and bubble up very far from their point of origin often makes debugging them hard. They also affect code reuse, as every path that includes exception-throwing code also becomes exceptional — a fact that is usually hidden and forces (careful and caring) developers to perpetually keep documentation up-to-date at every level of the affected call stack to avoid surprising behavior.
 
 Thinking about the matter might lead us to two conclusions:
 
